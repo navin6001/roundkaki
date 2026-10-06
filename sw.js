@@ -1,5 +1,5 @@
-const CACHE='roundkaki-pwa-v2.6.0';
-const CORE=['./','./index.html','./manifest.webmanifest?v=2.6','./privacy.html','./terms.html','./roundkaki-icon-v24-192.png','./roundkaki-icon-v24-512.png','./roundkaki-maskable-v24-192.png','./roundkaki-maskable-v24-512.png','./roundkaki-apple-v24.png','./brand-mark.png','./logo-roundkaki.png'];
+const CACHE='roundkaki-pwa-v3.0.0';
+const CORE=['./','./index.html','./manifest.webmanifest?v=3.0','./privacy.html','./terms.html','./roundkaki-icon-v24-192.png','./roundkaki-icon-v24-512.png','./roundkaki-maskable-v24-192.png','./roundkaki-maskable-v24-512.png','./roundkaki-apple-v24.png','./brand-mark.png','./logo-roundkaki.png'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
 });

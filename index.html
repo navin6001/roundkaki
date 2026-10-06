@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a3d2a" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<link rel="manifest" href="manifest.webmanifest?v=2.5" />
-<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=2.5" />
-<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=2.5" />
-<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=2.5" />
+<link rel="manifest" href="manifest.webmanifest?v=3.0" />
+<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=3.0" />
+<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=3.0" />
+<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=3.0" />
 <title>RoundKaki – Golf Games & Scoring</title>
 <style>
 :root{
@@ -46,18 +46,30 @@ button,input,select{font:inherit}button{cursor:pointer}.shell{max-width:720px;mi
 .empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}.divider{height:1px;background:var(--line);margin:13px 0}.hidden{display:none!important}.footer-note{text-align:center;color:var(--muted);font-size:10px;margin:18px 0}.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:50;background:#14271c;color:#fff;border-radius:12px;padding:10px 13px;font-size:12px;font-weight:800;box-shadow:var(--shadow);animation:fade 2.4s both}@keyframes fade{0%{opacity:0;transform:translate(-50%,8px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
 
 .player-editor-backdrop{position:fixed;inset:0;z-index:80;background:rgba(7,28,18,.58);backdrop-filter:blur(5px);display:flex;align-items:flex-end;justify-content:center;padding:12px}.player-editor{width:min(100%,680px);background:#fff;border-radius:24px 24px 18px 18px;padding:18px;box-shadow:0 22px 70px rgba(0,0,0,.28);max-height:92vh;overflow:auto}.player-editor h2{margin:0 0 4px}.tee-profile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:7px}.tee-profile{position:relative;display:grid;place-items:center;gap:5px;min-height:72px;border:2px solid var(--line);border-radius:15px;background:#fff;font-size:11px;font-weight:900;text-align:center;padding:8px}.tee-profile input{position:absolute;opacity:0;pointer-events:none}.tee-profile .dot{width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,0,0,.15);box-shadow:inset 0 0 0 2px rgba(255,255,255,.45)}.tee-profile.red .dot{background:#df3d49}.tee-profile.white .dot{background:#fff}.tee-profile.blue .dot{background:#3478df}.tee-profile.black .dot{background:#202522}.tee-profile:has(input:checked){border-color:var(--green);background:#eff8f2;box-shadow:0 0 0 3px rgba(18,97,63,.08)}.tee-profile:has(input:checked)::after{content:'✓';position:absolute;right:7px;top:5px;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:11px}.profile-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:14px}
+
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:13px}.auth-tab{border:1px solid var(--line);background:#fff;color:var(--muted);padding:10px;border-radius:12px;font-weight:900}.auth-tab.active{background:var(--green);color:#fff;border-color:var(--green)}
+.account-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#eef8f1;color:var(--green);font-size:10px;font-weight:900}.cloud-dot{width:8px;height:8px;border-radius:50%;background:#94a099}.cloud-dot.active{background:#22a35a}.cloud-dot.pending{background:#e4a62b}.cloud-dot.error{background:#c34b55}
+.account-card{background:linear-gradient(180deg,#fff,#f7fbf8);border:1px solid #cfe3d5}.profile-head{display:flex;align-items:center;gap:12px}.profile-avatar{width:54px;height:54px;border-radius:18px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:950;font-size:19px}.profile-meta{flex:1}.profile-meta b{font-size:16px}.profile-meta span{display:block;color:var(--muted);font-size:12px;margin-top:2px}.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.account-grid .field{margin-bottom:0}.cloud-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.auth-note{font-size:11px;line-height:1.45;color:var(--muted)}
+
 @media(min-width:640px){.quick-grid{grid-template-columns:repeat(4,1fr)}.declare-grid{grid-template-columns:repeat(4,1fr)}.ledger{grid-template-columns:repeat(4,1fr)}.course-holes{grid-template-columns:repeat(6,1fr)}}
 
 </style>
 </head>
 <body>
 <div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
 'use strict';
 
 const DB_KEY = 'roundkaki-db-v5';
 const LEGACY_KEYS = ['roundkaki-db-v4','roundkaki-db-v3','roundkaki-db-v2','golfkaki-db-v2'];
+const SUPABASE_URL = 'https://cgokwwydcwxtjwafjbnz.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_bYq4P4qe0RP_IgU3Dtpa-A__yy78f1V';
+const CLOUD_LINK_KEY = 'roundkaki-cloud-link-v1';
+const sb = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) : null;
+let authSession=null, authProfile=null, authPrivate=null, authBusy=false, authMessage='', authPane='login', authRecovery=false;
+let cloudMode='off', cloudRemoteState=null, cloudSyncTimer=null, cloudMessage='';
 const uid = (p='id') => `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const esc = s => String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -97,12 +109,12 @@ function applyVerifiedCoursePack(name,{quiet=false}={}){
 function defaultDB(){
   // Fresh installs intentionally start with no golfer profiles.
   // Existing users keep any player profiles already saved on their device.
-  return {version:7, players:[], pairStrokes:{}, history:[], activeRound:null, presets:[], courseCache:[], settings:{}};
+  return {version:8, _updatedAt:todayISO(), players:[], pairStrokes:{}, history:[], activeRound:null, presets:[], courseCache:[], settings:{}};
 }
 function loadDB(){
   const normalize = x => {
     if(!x || typeof x!=='object') return null;
-    x.version=7;
+    x.version=8;
     x.players=Array.isArray(x.players)?x.players:[];
     x.players.forEach(p=>{ if(!p.preferredTee) p.preferredTee='White'; });
     x.pairStrokes=x.pairStrokes||{}; x.history=Array.isArray(x.history)?x.history:[];
@@ -145,7 +157,54 @@ async function installRoundKaki(){
   toast('Use your browser menu and choose Install app / Add to Home screen.');
 }
 
-function saveDB(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function saveDB({sync=true}={}){
+  db._updatedAt=todayISO();
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  if(sync) scheduleCloudSync();
+}
+function cloudPayload(){
+  const x=clone(db);
+  if(x.settings) delete x.settings.golfCourseApiKey;
+  x.courseCache=[]; // Public course cache is device-local and can be re-downloaded.
+  return x;
+}
+function hasMeaningfulLocalData(){
+  return !!(db.activeRound || db.history?.length || Object.keys(db.pairStrokes||{}).length || (db.players||[]).filter(p=>!p.cloudUserId).length);
+}
+function markCloudLinked(){
+  if(!authSession?.user?.id)return;
+  localStorage.setItem(CLOUD_LINK_KEY,JSON.stringify({userId:authSession.user.id,lastSync:todayISO()}));
+}
+function cloudLinkedToCurrentUser(){
+  try{const x=JSON.parse(localStorage.getItem(CLOUD_LINK_KEY)||'null');return x?.userId===authSession?.user?.id?x:null;}catch{return null;}
+}
+function normalizeCloudDB(x){
+  if(!x||typeof x!=='object')return defaultDB();
+  const localApi=db?.settings?.golfCourseApiKey||'';
+  const localCourses=Array.isArray(db?.courseCache)?db.courseCache:[];
+  const n={...defaultDB(),...x};
+  n.version=8;n.players=Array.isArray(n.players)?n.players:[];n.players.forEach(p=>{if(!p.preferredTee)p.preferredTee='White';});
+  n.pairStrokes=n.pairStrokes||{};n.history=Array.isArray(n.history)?n.history:[];n.presets=Array.isArray(n.presets)?n.presets:[];n.courseCache=localCourses.length?localCourses:(Array.isArray(n.courseCache)?n.courseCache:[]);n.settings={...(n.settings||{})};
+  if(localApi)n.settings.golfCourseApiKey=localApi;
+  return n;
+}
+function restoreCloudPayload(payload){
+  db=normalizeCloudDB(payload);
+  localStorage.setItem(DB_KEY,JSON.stringify(db));
+  linkSignedInGolferToLocalProfile(false);
+}
+function scheduleCloudSync(){
+  if(!sb||cloudMode!=='active'||!authSession?.user?.id)return;
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer=setTimeout(()=>pushCloudState(false),900);
+}
+async function pushCloudState(showToast=false){
+  if(!sb||!authSession?.user?.id)return false;
+  const row={user_id:authSession.user.id,payload:cloudPayload(),updated_at:todayISO()};
+  const {error}=await sb.from('user_state').upsert(row,{onConflict:'user_id'});
+  if(error){cloudMessage=error.message;cloudMode='error';if(showToast)toast('Cloud sync failed.');render();return false;}
+  cloudMode='active';cloudMessage='Synced';markCloudLinked();if(showToast)toast('RoundKaki cloud updated.');return true;
+}
 function toast(msg){ const n=document.createElement('div'); n.className='toast'; n.textContent=msg; document.body.appendChild(n); setTimeout(()=>n.remove(),2500); }
 function pairKey(a,b){ return [a,b].sort().join('|'); }
 function player(id){ return db.players.find(p=>p.id===id); }
@@ -666,6 +725,95 @@ function finishRound(){
   historyOpenId=r.id; view='summary'; render();
 }
 
+async function loadSignedInProfile(){
+  if(!sb||!authSession?.user?.id)return;
+  const uidv=authSession.user.id;
+  const [pub,priv]=await Promise.all([
+    sb.from('profiles').select('id,roundkaki_id,full_name,handicap,preferred_tee').eq('id',uidv).maybeSingle(),
+    sb.from('private_profiles').select('mobile').eq('user_id',uidv).maybeSingle()
+  ]);
+  if(pub.error){authMessage=pub.error.message;return;}
+  authProfile=pub.data||null;authPrivate=priv.data||{mobile:''};
+  linkSignedInGolferToLocalProfile(false);
+}
+function linkSignedInGolferToLocalProfile(doSave=true){
+  if(!authSession?.user?.id||!authProfile)return;
+  let p=db.players.find(x=>x.cloudUserId===authSession.user.id);
+  if(!p)p=db.players.find(x=>!x.cloudUserId&&String(x.name||'').trim().toLowerCase()===String(authProfile.full_name||'').trim().toLowerCase());
+  if(!p){p={id:uid('p'),name:authProfile.full_name,handicap:Number(authProfile.handicap)||0,preferredTee:normalizeTeeColor(authProfile.preferred_tee),cloudUserId:authSession.user.id,roundkakiId:authProfile.roundkaki_id};db.players.unshift(p);}
+  else{p.name=authProfile.full_name;p.handicap=Number(authProfile.handicap)||0;p.preferredTee=normalizeTeeColor(authProfile.preferred_tee);p.cloudUserId=authSession.user.id;p.roundkakiId=authProfile.roundkaki_id;}
+  if(doSave)saveDB();else localStorage.setItem(DB_KEY,JSON.stringify(db));
+}
+async function initializeCloudState(){
+  if(!sb||!authSession?.user?.id)return;
+  const {data,error}=await sb.from('user_state').select('payload,updated_at').eq('user_id',authSession.user.id).maybeSingle();
+  if(error){cloudMode='error';cloudMessage=error.message;return;}
+  if(!data){cloudMode='active';cloudRemoteState=null;await pushCloudState(false);return;}
+  const marker=cloudLinkedToCurrentUser();
+  if(marker){
+    const remoteTime=new Date(data.updated_at||0).getTime(),localTime=new Date(db._updatedAt||0).getTime();
+    if(remoteTime>localTime+1500)restoreCloudPayload(data.payload);else await pushCloudState(false);
+    cloudMode='active';cloudRemoteState=null;markCloudLinked();return;
+  }
+  if(!hasMeaningfulLocalData()){
+    restoreCloudPayload(data.payload);cloudMode='active';cloudRemoteState=null;markCloudLinked();return;
+  }
+  cloudMode='pending';cloudRemoteState=data;cloudMessage='Cloud data already exists. Choose which copy to keep.';
+}
+async function handleAuthSession(session,event=''){
+  authSession=session||null;
+  if(event==='PASSWORD_RECOVERY')authRecovery=true;
+  if(!authSession){authProfile=null;authPrivate=null;cloudMode='off';cloudRemoteState=null;render();return;}
+  await loadSignedInProfile();
+  await initializeCloudState();
+  render();
+}
+async function initSupabaseAuth(){
+  if(!sb){authMessage='Cloud login library could not load. Guest mode still works.';render();return;}
+  sb.auth.onAuthStateChange((event,session)=>{setTimeout(()=>handleAuthSession(session,event),0);});
+  const {data,error}=await sb.auth.getSession();
+  if(error)authMessage=error.message;
+  await handleAuthSession(data?.session||null);
+}
+function authRedirectURL(){return new URL('./',location.href).href.split('#')[0].split('?')[0];}
+function validRoundKakiId(v){return /^[a-z0-9_]{3,20}$/.test(String(v||'').toLowerCase());}
+async function registerAccount(){
+  if(!sb||authBusy)return;
+  const name=document.getElementById('regName')?.value?.trim()||'',rk=(document.getElementById('regId')?.value||'').trim().toLowerCase(),email=(document.getElementById('regEmail')?.value||'').trim().toLowerCase(),mobile=(document.getElementById('regMobile')?.value||'').trim(),hcp=Number(document.getElementById('regHcp')?.value),tee=normalizeTeeColor(document.querySelector('input[name="regTee"]:checked')?.value||'White'),pw=document.getElementById('regPassword')?.value||'',pw2=document.getElementById('regPassword2')?.value||'';
+  if(name.length<2)return toast('Enter your full name.');if(!validRoundKakiId(rk))return toast('RoundKaki ID: 3–20 letters, numbers or underscore.');if(!email.includes('@'))return toast('Enter a valid email.');if(mobile.length<7)return toast('Enter your mobile number.');if(!Number.isFinite(hcp)||hcp<0||hcp>54)return toast('Enter a handicap from 0 to 54.');if(pw.length<8)return toast('Use at least 8 characters for your password.');if(pw!==pw2)return toast('Passwords do not match.');
+  authBusy=true;authMessage='Checking RoundKaki ID…';render();
+  const avail=await sb.rpc('roundkaki_id_available',{candidate:rk});
+  if(avail.error){authBusy=false;authMessage='Cloud database setup is not complete yet. Run the RoundKaki Supabase setup SQL first.';render();return;}
+  if(avail.data!==true){authBusy=false;authMessage='That RoundKaki ID is already taken.';render();return;}
+  authMessage='Creating account…';render();
+  const {data,error}=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:authRedirectURL(),data:{full_name:name,roundkaki_id:rk,mobile,handicap:hcp,preferred_tee:tee}}});
+  authBusy=false;
+  if(error){authMessage=error.message;render();return;}
+  authMessage=data?.session?'Account created and signed in.':'Account created. Check your email to confirm it, then sign in.';authPane='login';render();
+}
+async function loginAccount(){
+  if(!sb||authBusy)return;const email=(document.getElementById('loginEmail')?.value||'').trim().toLowerCase(),password=document.getElementById('loginPassword')?.value||'';if(!email||!password)return toast('Enter your email and password.');
+  authBusy=true;authMessage='Signing in…';render();const {error}=await sb.auth.signInWithPassword({email,password});authBusy=false;if(error){authMessage=error.message;render();return;}authMessage='';
+}
+async function forgotPassword(){
+  if(!sb)return;const email=(document.getElementById('loginEmail')?.value||'').trim().toLowerCase();if(!email.includes('@'))return toast('Enter your email first.');const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:authRedirectURL()});authMessage=error?error.message:'Password reset email sent.';render();
+}
+async function logoutAccount(){if(!sb)return;await sb.auth.signOut();authMessage='Signed out. Local guest data remains on this device.';view='home';render();}
+async function saveAccountProfile(){
+  if(!sb||!authSession?.user?.id||!authProfile)return;const name=document.getElementById('acctName')?.value?.trim()||'',rk=(document.getElementById('acctId')?.value||'').trim().toLowerCase(),mobile=(document.getElementById('acctMobile')?.value||'').trim(),hcp=Number(document.getElementById('acctHcp')?.value),tee=normalizeTeeColor(document.querySelector('input[name="acctTee"]:checked')?.value||authProfile.preferred_tee||'White');
+  if(name.length<2||!validRoundKakiId(rk)||!Number.isFinite(hcp)||hcp<0||hcp>54)return toast('Check name, RoundKaki ID and handicap.');
+  if(rk!==authProfile.roundkaki_id){const a=await sb.rpc('roundkaki_id_available',{candidate:rk});if(a.error||a.data!==true)return toast('That RoundKaki ID is not available.');}
+  authBusy=true;render();const uidv=authSession.user.id;
+  const [u1,u2]=await Promise.all([sb.from('profiles').update({roundkaki_id:rk,full_name:name,handicap:hcp,preferred_tee:tee}).eq('id',uidv),sb.from('private_profiles').upsert({user_id:uidv,mobile},{onConflict:'user_id'})]);
+  if(u1.error||u2.error){authBusy=false;authMessage=(u1.error||u2.error).message;render();return;}
+  await sb.auth.updateUser({data:{full_name:name,roundkaki_id:rk,mobile,handicap:hcp,preferred_tee:tee}}).catch(()=>{});
+  authBusy=false;authMessage='Profile updated.';await loadSignedInProfile();saveDB();render();
+}
+async function updateRecoveredPassword(){
+  if(!sb||!authSession)return;const p=document.getElementById('newPassword')?.value||'',p2=document.getElementById('newPassword2')?.value||'';if(p.length<8)return toast('Use at least 8 characters.');if(p!==p2)return toast('Passwords do not match.');const {error}=await sb.auth.updateUser({password:p});if(error){authMessage=error.message;render();return;}authRecovery=false;authMessage='Password updated.';render();
+}
+async function chooseCloudRestore(){if(!cloudRemoteState)return;restoreCloudPayload(cloudRemoteState.payload);cloudMode='active';cloudRemoteState=null;markCloudLinked();render();toast('Cloud data restored to this device.');}
+async function chooseCloudLocal(){cloudMode='active';cloudRemoteState=null;await pushCloudState(true);render();}
 function render(){
   const app=document.getElementById('app');
   if(view==='home') app.innerHTML=homeView();
@@ -675,6 +823,7 @@ function render(){
   else if(view==='history') app.innerHTML=historyView();
   else if(view==='summary') app.innerHTML=summaryView();
   else if(view==='settings') app.innerHTML=settingsView();
+  else if(view==='account') app.innerHTML=accountView();
   if(playerEditor) app.insertAdjacentHTML('beforeend',playerEditorHTML());
   bind();
 }
@@ -702,21 +851,41 @@ function savePlayerProfile(){
 }
 
 function header(back=false,title='RoundKaki'){
-  return `<div class="top"><div class="brand"><div class="mark"><img src="brand-mark.png" alt="RoundKaki"></div><div><h1>${esc(title)}</h1><small>Your Round. Your Rules.</small></div></div>${back?'<button class="icon-btn" data-action="home">Home</button>':'<button class="icon-btn" data-action="players">Players</button>'}</div>`;
+  const acct=authSession?`<button class="icon-btn" data-action="account">👤</button>`:`<button class="icon-btn" data-action="account">Sign in</button>`;
+  return `<div class="top"><div class="brand"><div class="mark"><img src="brand-mark.png" alt="RoundKaki"></div><div><h1>${esc(title)}</h1><small>Your Round. Your Rules.</small></div></div>${back?'<button class="icon-btn" data-action="home">Home</button>':`<div class="row" style="gap:6px"><button class="icon-btn" data-action="players">Players</button>${acct}</div>`}</div>`;
 }
 
+function accountView(){
+  const tees=['Red','White','Blue','Black'];
+  if(!authSession){
+    return `<main class="shell">${header(true,'Account')}<section class="card account-card"><div class="row between"><div><b>RoundKaki Cloud</b><div class="smalltxt muted">Permanent golf profile + cloud backup</div></div><span class="account-badge"><span class="cloud-dot"></span>Guest</span></div></section>
+    ${authMessage?`<div class="notice ${/created|sent/i.test(authMessage)?'greenish':''}" style="margin-bottom:12px">${esc(authMessage)}</div>`:''}
+    <div class="auth-tabs"><button class="auth-tab ${authPane==='login'?'active':''}" data-action="auth-login-pane">Sign in</button><button class="auth-tab ${authPane==='register'?'active':''}" data-action="auth-register-pane">Create account</button></div>
+    ${authPane==='login'?`<section class="card"><label class="field"><span>Email</span><input class="input" id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com"></label><label class="field"><span>Password</span><input class="input" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password"></label><button class="btn wide" data-action="auth-login" ${authBusy?'disabled':''}>${authBusy?'Please wait…':'Sign in'}</button><button class="btn outline wide" style="margin-top:8px" data-action="auth-forgot">Forgot password</button><p class="auth-note">Your email is used for login. Your RoundKaki ID is the username other golfers can use to identify you.</p></section>`:`<section class="card"><label class="field"><span>Full name</span><input class="input" id="regName" autocomplete="name" placeholder="Your name"></label><label class="field"><span>RoundKaki ID</span><input class="input" id="regId" autocapitalize="none" autocomplete="username" placeholder="e.g. navin18"></label><label class="field"><span>Email</span><input class="input" id="regEmail" type="email" autocomplete="email" placeholder="you@example.com"></label><label class="field"><span>Mobile number</span><input class="input" id="regMobile" type="tel" autocomplete="tel" placeholder="+60 12-345 6789"></label><label class="field"><span>Official handicap</span><input class="input" id="regHcp" type="number" min="0" max="54" step="0.1" value="18"></label><div class="field"><span style="display:block;font-size:12px;font-weight:800;margin-bottom:6px;color:#536058">Normal tee box</span><div class="tee-profile-grid">${tees.map(t=>`<label class="tee-profile ${t.toLowerCase()}"><input type="radio" name="regTee" value="${t}" ${t==='White'?'checked':''}><span class="dot"></span><span>${teeEmoji(t)} ${t}</span></label>`).join('')}</div></div><label class="field"><span>Password</span><input class="input" id="regPassword" type="password" autocomplete="new-password" placeholder="Minimum 8 characters"></label><label class="field"><span>Confirm password</span><input class="input" id="regPassword2" type="password" autocomplete="new-password"></label><button class="btn wide" data-action="auth-register" ${authBusy?'disabled':''}>${authBusy?'Please wait…':'Create RoundKaki Account'}</button><p class="auth-note">Email and mobile are private account details. Other signed-in golfers can see only your RoundKaki ID, name, handicap and normal tee.</p></section>`}
+    <section class="card"><b>Prefer not to register yet?</b><p class="smalltxt muted">Guest mode still supports scoring, Baccarat, Kaki strokes and local history on this device.</p><button class="btn outline wide" data-action="home">Continue as Guest</button></section></main>`;
+  }
+  const p=authProfile||{},mobile=authPrivate?.mobile||'',email=authSession.user.email||'',status=cloudMode==='active'?'Cloud sync on':cloudMode==='pending'?'Choose cloud copy':cloudMode==='error'?'Cloud issue':'Connecting';
+  return `<main class="shell">${header(true,'My Account')}${authMessage?`<div class="notice greenish" style="margin-bottom:12px">${esc(authMessage)}</div>`:''}
+  ${authRecovery?`<section class="card"><b>Set a new password</b><label class="field" style="margin-top:10px"><span>New password</span><input class="input" id="newPassword" type="password" autocomplete="new-password"></label><label class="field"><span>Confirm new password</span><input class="input" id="newPassword2" type="password" autocomplete="new-password"></label><button class="btn wide" data-action="auth-new-password">Update Password</button></section>`:''}
+  <section class="card account-card"><div class="profile-head"><div class="profile-avatar">${esc((p.full_name||email||'R').slice(0,2).toUpperCase())}</div><div class="profile-meta"><b>${esc(p.full_name||'RoundKaki Golfer')}</b><span>@${esc(p.roundkaki_id||'profile')} · ${esc(email)}</span></div><span class="account-badge"><span class="cloud-dot ${cloudMode}"></span>${esc(status)}</span></div></section>
+  ${cloudMode==='pending'?`<section class="card"><div class="notice"><b>Cloud data already exists</b><br>This device also has RoundKaki data. Choose which copy to keep before automatic sync starts.</div><div class="cloud-actions"><button class="btn" data-action="cloud-restore">Restore Cloud</button><button class="btn outline" data-action="cloud-local">Use This Device</button></div></section>`:''}
+  <section class="card"><b>Golf profile</b><div class="account-grid" style="margin-top:11px"><label class="field" style="grid-column:1/-1"><span>Full name</span><input class="input" id="acctName" value="${esc(p.full_name||'')}"></label><label class="field"><span>RoundKaki ID</span><input class="input" id="acctId" value="${esc(p.roundkaki_id||'')}"></label><label class="field"><span>Handicap</span><input class="input" id="acctHcp" type="number" min="0" max="54" step="0.1" value="${p.handicap??18}"></label><label class="field" style="grid-column:1/-1"><span>Mobile (private)</span><input class="input" id="acctMobile" type="tel" value="${esc(mobile)}"></label></div><div class="field"><span style="display:block;font-size:12px;font-weight:800;margin-bottom:6px;color:#536058">Normal tee box</span><div class="tee-profile-grid">${tees.map(t=>`<label class="tee-profile ${t.toLowerCase()}"><input type="radio" name="acctTee" value="${t}" ${normalizeTeeColor(p.preferred_tee)===t?'checked':''}><span class="dot"></span><span>${teeEmoji(t)} ${t}</span></label>`).join('')}</div></div><button class="btn wide" data-action="auth-save-profile" ${authBusy?'disabled':''}>Save Profile</button></section>
+  <section class="card"><div class="row between"><div><b>☁️ RoundKaki Cloud</b><div class="smalltxt muted">Players, Kaki strokes, rounds and course cache</div></div><button class="btn small outline" data-action="cloud-sync-now">Sync Now</button></div>${cloudMessage?`<div class="tiny muted" style="margin-top:8px">${esc(cloudMessage)}</div>`:''}</section>
+  <section class="card"><b>Security</b><p class="smalltxt muted">Password reset links are sent to ${esc(email)}.</p><button class="btn outline wide" data-action="auth-reset-email">Send Password Reset Email</button><button class="btn danger wide" style="margin-top:8px" data-action="auth-logout">Sign Out</button></section></main>`;
+}
 function homeView(){
   const active=db.activeRound;
   return `<main class="shell">${header(false)}
   <section class="hero"><div class="eyebrow">Your golf group, remembered</div><h2>One score.<br>Every game.</h2><p>Kaki strokes, UP declarations, Baccarat Golf points, partners and match history — tracked hole by hole.</p><div class="hero-actions"><button class="btn lime" data-action="new-game">+ Create Game</button>${active?'<button class="btn white" data-action="continue">Continue Round</button>':db.history.length?'<button class="btn white" data-action="repeat-last">Repeat Last Setup</button>':'<button class="btn white" data-action="history">Game History</button>'}</div></section>
   ${active?`<div class="section-title"><h3>Active round</h3><span>Hole ${active.currentHole} / 18</span></div><section class="card active-card"><div class="row between"><div><b>${esc(active.course.name)}</b><div class="smalltxt muted">${active.players.map(p=>esc(p.name)).join(' · ')}</div></div><button class="btn small" data-action="continue">Open</button></div></section>`:''}
   ${!isInstalledApp()?`<section class="card" style="margin-top:12px"><div class="row between"><div><b>📲 Install RoundKaki</b><div class="smalltxt muted">Full-screen app · offline scoring · home-screen icon</div></div><button class="btn small lime" data-action="install-app">${deferredInstallPrompt?'Install':isIOSDevice?'How to install':'Install'}</button></div></section>`:''}
-  <div class="section-title"><h3>Quick access</h3><span>Release v2.6</span></div>
+  ${authSession?`<section class="card account-card" style="margin-top:12px"><div class="row between"><div><b>👤 ${esc(authProfile?.full_name||authSession.user.email||'Signed in')}</b><div class="smalltxt muted">@${esc(authProfile?.roundkaki_id||'profile')} · ${cloudMode==='active'?'Cloud sync on':'Cloud setup'}</div></div><button class="btn small outline" data-action="account">Account</button></div></section>`:`<section class="card" style="margin-top:12px"><div class="row between"><div><b>☁️ Save your golf history</b><div class="smalltxt muted">Create a free RoundKaki account</div></div><button class="btn small" data-action="account">Sign in</button></div></section>`}
+  <div class="section-title"><h3>Quick access</h3><span>Release v3.0</span></div>
   <div class="quick-grid">
     <button class="quick" data-action="new-game"><div class="qicon">⛳</div><b>Create Game</b><span>Set up a round</span></button>
     <button class="quick" data-action="players"><div class="qicon">👥</div><b>Players</b><span>HCP & Kaki strokes</span></button>
     <button class="quick" data-action="history"><div class="qicon">🏆</div><b>History</b><span>Past rounds</span></button>
-    <button class="quick" data-action="new-game"><div class="qicon">🃏</div><b>Baccarat</b><span>UP · strokes · points</span></button>
+    <button class="quick" data-action="account"><div class="qicon">👤</div><b>Account</b><span>ID · profile · cloud</span></button>
   </div>
   <div style="margin-top:10px"><button class="btn outline wide" data-action="settings">⚙️ Data backup & rules</button></div>
   <div class="section-title"><h3>How RoundKaki remembers</h3></div>
@@ -886,7 +1055,7 @@ function settingsView(){
   return `<main class="shell">${header(true,'Data & Rules')}
   <section class="card"><b>RoundKaki game rules</b><div class="notice greenish" style="margin-top:10px"><b>Kaki Stroke memory</b><br>Pair-specific strokes are remembered. At round end, a receiver losing by 2+ holes gets +1 next game; winning by 2+ gets −1. You can override any suggested stroke before the next round.</div><div class="notice" style="margin-top:9px"><b>Baccarat Golf</b><br>Strokes apply before comparing each pair. Square is a push. UP/SINGLE is locked per golfer per hole. UP vs UP gives 4 points for a normal win, 8 for Birdie, 16 for Eagle and 32 for an actual Hole-in-One.</div></section>
   <section class="card"><b>📍 Malaysia Course Pack & GPS</b><p class="smalltxt muted">RoundKaki uses the free, keyless OpenGolfAPI for Par / Stroke Index / tee scorecards and OpenStreetMap for mapped hole layout. No API key is required for normal use. Course data is cached on this device after it is loaded.</p><button class="btn wide" data-action="sync-malaysia-pack" ${malaysiaPackSyncState.running?'disabled':''}>${malaysiaPackSyncState.running?'Syncing Malaysia Course Pack…':'Download / Refresh Malaysia Course Pack'}</button>${malaysiaPackSyncState.message?`<div class="notice greenish" style="margin-top:9px"><b>${esc(malaysiaPackSyncState.message)}</b></div>`:''}<div class="tiny muted" style="margin-top:8px">Cached courses: ${db.courseCache?.length||0}/${MALAYSIA_COURSES.length}. A synced scorecard still needs golfer/club review if its SI is incomplete. GPS location is requested only when you tap a GPS feature.</div><details style="margin-top:10px"><summary class="smalltxt"><b>Optional backup data provider</b></summary><p class="tiny muted">If you already have a GolfCourseAPI key, RoundKaki can use it as a fallback when the open source does not contain a course.</p><label class="field"><span>GolfCourseAPI key (optional)</span><input class="input" id="golfApiKey" type="password" value="${esc(db.settings?.golfCourseApiKey||'')}" placeholder="Optional"></label><button class="btn small outline" data-action="save-api-key">Save optional key</button></details><div class="tiny muted" style="margin-top:10px">Data attribution: scorecard/course data may contain OpenGolfAPI data (ODbL); mapped layout may contain OpenStreetMap data (ODbL).</div></section>
-  <section class="card"><b>Local data backup</b><p class="smalltxt muted">This free MVP stores players, rounds and Kaki-stroke memory on this browser/device. Export a backup before changing phones or clearing browser data.</p><button class="btn wide" data-action="export-data">Export RoundKaki backup</button><button class="btn outline wide" style="margin-top:8px" data-action="import-data">Import backup</button><input id="importFile" type="file" accept="application/json" class="hidden"></section>
+  <section class="card"><b>Local data backup</b><p class="smalltxt muted">Guest data is stored on this device. When signed in, RoundKaki can also sync players, rounds and Kaki-stroke memory to your private cloud account. Manual export remains available as an extra backup.</p><button class="btn wide" data-action="export-data">Export RoundKaki backup</button><button class="btn outline wide" style="margin-top:8px" data-action="import-data">Import backup</button><input id="importFile" type="file" accept="application/json" class="hidden"></section>
   <section class="card"><b>Golf scoring only</b><p class="smalltxt muted">RoundKaki records golf scores and non-cash points/units. It does not accept stakes, hold funds, facilitate wagering, or process payouts.</p></section>
   <button class="btn danger wide" data-action="reset-data">Reset local demo data</button></main>`;
 }
@@ -940,6 +1109,19 @@ function action(a,el){
   else if(a==='players'){view='players';render();}
   else if(a==='history'){view='history';render();}
   else if(a==='settings'){view='settings';render();}
+  else if(a==='account'){view='account';authMessage='';render();}
+  else if(a==='auth-login-pane'){authPane='login';authMessage='';render();}
+  else if(a==='auth-register-pane'){authPane='register';authMessage='';render();}
+  else if(a==='auth-login') loginAccount();
+  else if(a==='auth-register') registerAccount();
+  else if(a==='auth-forgot') forgotPassword();
+  else if(a==='auth-logout') logoutAccount();
+  else if(a==='auth-save-profile') saveAccountProfile();
+  else if(a==='auth-new-password') updateRecoveredPassword();
+  else if(a==='auth-reset-email'){if(authSession?.user?.email){sb.auth.resetPasswordForEmail(authSession.user.email,{redirectTo:authRedirectURL()}).then(({error})=>{authMessage=error?error.message:'Password reset email sent.';render();});}}
+  else if(a==='cloud-restore') chooseCloudRestore();
+  else if(a==='cloud-local') chooseCloudLocal();
+  else if(a==='cloud-sync-now') pushCloudState(true);
   else if(a==='export-data') exportDataFile();
   else if(a==='import-data') document.getElementById('importFile')?.click();
   else if(a==='reset-data') resetData();
@@ -995,8 +1177,9 @@ function nextHole(){
 function addPlayerPrompt(){openPlayerEditor(null,view==='wizard');}
 function editPlayer(id){openPlayerEditor(id,false);}
 
-window.roundkaki={reset(){localStorage.removeItem(DB_KEY);db=defaultDB();view='home';render();},exportData(){return clone(db);},engine:{strokesOnHole,pairResult,baccaratLedger,pairMatchStatus,parseDistanceMeters,expandHoleElement,apiTeeOptions,openGolfTeeOptions,fetchOpenGolfCoursePackEntry}};
+window.roundkaki={reset(){localStorage.removeItem(DB_KEY);db=defaultDB();view='home';render();},exportData(){return clone(db);},cloud:{sync:()=>pushCloudState(true)},engine:{strokesOnHole,pairResult,baccaratLedger,pairMatchStatus,parseDistanceMeters,expandHoleElement,apiTeeOptions,openGolfTeeOptions,fetchOpenGolfCoursePackEntry}};
 render();
+initSupabaseAuth();
 })();
 
 </script>
