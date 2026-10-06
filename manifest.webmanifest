@@ -2,8 +2,8 @@
   "id": "./",
   "name": "RoundKaki – Golf Games & Scoring",
   "short_name": "RoundKaki",
-  "description": "Social golf scoring with RoundKaki accounts, cloud backup, remembered Kaki strokes, individual tee boxes, Baccarat Golf points, partners, match history, Malaysia course search and GPS assistance.",
-  "start_url": "./?source=pwa&v=3.2",
+  "description": "Social golf scoring with cloud accounts, remembered Kaki strokes, individual tee boxes, Baccarat Golf points, Malaysia course search, GPS assistance and on-device scorecard scanning.",
+  "start_url": "./?source=pwa&v=3.4",
   "scope": "./",
   "display": "standalone",
   "display_override": [
@@ -47,7 +47,7 @@
     {
       "name": "Open RoundKaki",
       "short_name": "Open",
-      "url": "./?v=3.2"
+      "url": "./?v=3.4"
     }
   ]
 }

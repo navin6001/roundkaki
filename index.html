@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a3d2a" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<link rel="manifest" href="manifest.webmanifest?v=3.2" />
-<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=3.2" />
-<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=3.2" />
-<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=3.2" />
+<link rel="manifest" href="manifest.webmanifest?v=3.4" />
+<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=3.4" />
+<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=3.4" />
+<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=3.4" />
 <title>RoundKaki – Golf Games & Scoring</title>
 <style>
 :root{
@@ -53,6 +53,8 @@ button,input,select{font:inherit}button{cursor:pointer}.shell{max-width:720px;mi
 
 @media(min-width:640px){.quick-grid{grid-template-columns:repeat(4,1fr)}.declare-grid{grid-template-columns:repeat(4,1fr)}.ledger{grid-template-columns:repeat(4,1fr)}.course-holes{grid-template-columns:repeat(6,1fr)}}
 
+
+.scorecard-scan-backdrop{position:fixed;inset:0;z-index:90;background:rgba(7,28,18,.62);backdrop-filter:blur(5px);display:flex;align-items:flex-end;justify-content:center;padding:12px}.scorecard-scan{width:min(100%,720px);background:#fff;border-radius:24px 24px 18px 18px;padding:18px;box-shadow:0 22px 70px rgba(0,0,0,.3);max-height:94vh;overflow:auto}.scan-preview{border:1px dashed #b9c9bd;border-radius:16px;background:#f7faf7;min-height:140px;display:grid;place-items:center;overflow:hidden;margin:10px 0}.scan-preview img{width:100%;max-height:280px;object-fit:contain;display:block}.scan-progress{height:8px;background:#edf1ee;border-radius:999px;overflow:hidden;margin-top:9px}.scan-progress i{display:block;height:100%;background:var(--green);width:0}.scan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.scan-stat{border:1px solid var(--line);border-radius:13px;padding:10px;background:#fbfcfb}.scan-stat b{display:block;font-size:18px}.layout-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:#eef4ef;color:var(--green);font-size:10px;font-weight:900}.layout-note{font-size:11px;color:var(--muted);line-height:1.45}.course-layout-row{display:grid;grid-template-columns:1.2fr 1fr;gap:8px}.course-display-sub{font-size:10px;color:var(--muted);margin-top:2px}
 </style>
 </head>
 <body>
@@ -97,7 +99,7 @@ function verifiedCourseData(name){return VERIFIED_COURSE_PACK[normalizeCourseNam
 function applyVerifiedCoursePack(name,{quiet=false}={}){
   const pack=verifiedCourseData(name); if(!pack)return false;
   const previous=draft.course||defaultCourse();
-  const c={...defaultCourse(),...previous,name:pack.name,tee:pack.tee,provider:pack.provider,verified:true,verificationStatus:'verified',verifiedAt:pack.verifiedAt,verifiedSourceNote:pack.sourceNote,availableTees:[pack.tee]};
+  const c={...defaultCourse(),...previous,name:pack.name,venueName:pack.name,layoutName:'',tee:pack.tee,provider:pack.provider,verified:true,verificationStatus:'verified',verifiedAt:pack.verifiedAt,verifiedSourceNote:pack.sourceNote,availableTees:[pack.tee]};
   c.holes=c.holes.map((h,i)=>{const [par,si,distance]=pack.holes[i]; return {...h,par,si,distance,scorecardSource:pack.provider};});
   draft.course=c; saveCourseCache(c);
   courseSearchState={...courseSearchState,status:'selected',message:`Verified RoundKaki scorecard loaded for ${pack.name}. Par / SI 1–18 ready.`};
@@ -141,6 +143,7 @@ let malaysiaCourseCloudState = {loading:false,cached:null,message:''};
 let gpsHoleState = null;
 let deferredInstallPrompt = null;
 let playerEditor = null;
+let scorecardScanner = null;
 const isIOSDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
 function isInstalledApp(){ return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone===true; }
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredInstallPrompt=e; if(view==='home')render(); });
@@ -216,11 +219,16 @@ function baccaratLabel(mult){ return mult===8?'HIO':mult===4?'Eagle':mult===2?'B
 
 function defaultCourse(){
   return {
-    name:'', tee:'White', latitude:null, longitude:null, provider:'manual', osm:null, availableTees:[],
-    // Never invent Stroke Index. A new course starts blank until web data is loaded or the golfer verifies the scorecard.
+    name:'', venueName:'', layoutName:'', layoutType:'18-hole', tee:'White', latitude:null, longitude:null, provider:'manual', osm:null, availableTees:[],
+    // One golf venue can contain multiple distinct 18-hole courses/layouts. Never merge their scorecards.
     holes:Array.from({length:18},(_,i)=>({hole:i+1, par:null, si:null, distance:null, teeLat:null, teeLon:null, pinLat:null, pinLon:null, centerLat:null, centerLon:null, osmTags:null}))
   };
 }
+function courseVenueName(c){return String(c?.venueName||c?.name||'').trim();}
+function courseLayoutName(c){return String(c?.layoutName||'').trim();}
+function courseDisplayName(c){const v=courseVenueName(c),l=courseLayoutName(c);return l?`${v} — ${l}`:v;}
+function courseLookupName(c){return [courseVenueName(c),courseLayoutName(c)].filter(Boolean).join(' ');}
+function courseLibraryKeyLocal(c){const v=normalizeCourseName(courseVenueName(c)),l=normalizeCourseName(courseLayoutName(c));return l?`${v}::${l}`:v;}
 
 function haversineM(lat1,lon1,lat2,lon2){
   const r=6371000,toRad=x=>x*Math.PI/180;
@@ -373,9 +381,9 @@ async function mergeOSMLayoutIntoCourse(course){
   return course;
 }
 async function loadOpenGolfIntoDraft(name,row=null,quiet=false){
-  const c=await fetchOpenGolfCoursePackEntry(name,row);await mergeOSMLayoutIntoCourse(c);draft.course={...c,name:row?.name||c.name};saveCourseCache(draft.course);
+  const c=await fetchOpenGolfCoursePackEntry(name,row);await mergeOSMLayoutIntoCourse(c);const venue=row?.name||c.venueName||c.name;const layout=row?.layoutName||c.layoutName||'';draft.course={...c,name:venue,venueName:venue,layoutName:layout};saveCourseCache(draft.course);
   const sis=draft.course.holes.map(h=>Number(h.si));const valid=sis.length===18&&new Set(sis).size===18&&sis.every(x=>x>=1&&x<=18);
-  courseSearchState={...courseSearchState,status:'selected',message:`${draft.course.name}: course scorecard loaded · ${valid?'SI 1–18 ready':'SI incomplete — review before play'}${draft.course.holes.some(h=>h.centerLat)?' · mapped hole layout added':''}.`};
+  courseSearchState={...courseSearchState,status:'selected',message:`${courseDisplayName(draft.course)}: course scorecard loaded · ${valid?'SI 1–18 ready':'SI incomplete — review before play'}${draft.course.holes.some(h=>h.centerLat)?' · mapped hole layout added':''}.`};
   if(!quiet)toast(valid?'Course scorecard loaded.':'Course loaded; review missing SI.');render();return draft.course;
 }
 
@@ -389,9 +397,11 @@ async function courseDataProxy(action,payload={}){
   return data;
 }
 async function loadGolfCourseApiIntoDraft(name,row=null,quiet=false){
-  const out=await courseDataProxy('lookup',{name,latitude:row?.latitude??draft?.course?.latitude??null,longitude:row?.longitude??draft?.course?.longitude??null});
+  const layoutName=String(row?.layoutName??draft?.course?.layoutName??'').trim();
+  const out=await courseDataProxy('lookup',{name,layout_name:layoutName,latitude:row?.latitude??draft?.course?.latitude??null,longitude:row?.longitude??draft?.course?.longitude??null});
+  if(out?.requires_layout){draft.course.availableLayouts=out.layouts||[];courseSearchState={...courseSearchState,status:'selected',message:`${name} has multiple course layouts. Choose the exact course before loading its scorecard.`};render();const e=new Error('Choose a course/layout first.');e.requiresLayout=true;throw e;}
   const detail=out?.detail||{};const tees=apiTeeOptions(detail);if(!tees.length)throw new Error('No tee scorecard is available for this course yet.');
-  const c=draft.course||defaultCourse();c.golfApiCourseId=out?.provider_course_id||detail?.id||null;c.apiTees=tees;c.availableTees=tees.map(t=>t.key);c.webScorecardName=out?.source_name||golfApiCourseName(detail);c.provider=out?.provider||'RoundKaki Course Library';c.verificationStatus=out?.verification_status||'community';
+  const c=draft.course||defaultCourse();c.name=c.name||name;c.venueName=out?.venue_name||c.venueName||c.name||name;c.layoutName=out?.layout_name??c.layoutName??'';c.golfApiCourseId=out?.provider_course_id||detail?.id||null;c.apiTees=tees;c.availableTees=tees.map(t=>t.key);c.webScorecardName=out?.source_name||golfApiCourseName(detail);c.provider=out?.provider||'RoundKaki Course Library';c.verificationStatus=out?.verification_status||'community';
   const wanted=normalizeTeeColor(c.tee||'White');
   const selected=tees.find(t=>normalizeTeeColor(t.tee_name)===wanted)||tees.find(t=>t.gender==='male'&&normalizeTeeColor(t.tee_name)==='White')||tees.find(t=>t.gender==='female'&&normalizeTeeColor(t.tee_name)==='Red')||tees[0];
   c.tee=selected.key;applyTeeToCourse(c,c.tee);await mergeOSMLayoutIntoCourse(c);saveCourseCache(c);
@@ -431,11 +441,13 @@ function chooseApiMatch(courses,row){
   return scored[0]?.c||courses[0];
 }
 async function refreshScorecardFromWeb(row=null,quiet=false){
-  const name=row?.name||draft?.course?.name;if(!name)return;
+  const name=row?.name||draft?.course?.name;if(!name)return; const layoutName=row?.layoutName??draft?.course?.layoutName??'';
   if(applyVerifiedCoursePack(name,{quiet:true})){if(!quiet)toast('Verified RoundKaki course data loaded.');return;}
-  courseSearchState={...courseSearchState,status:'loading-scorecard',message:`Loading ${name} scorecard…`};render();
-  try{return await loadGolfCourseApiIntoDraft(name,row,quiet);}catch(primaryErr){
-    try{return await loadOpenGolfIntoDraft(name,row,quiet);}catch(openErr){
+  courseSearchState={...courseSearchState,status:'loading-scorecard',message:`Loading ${layoutName?`${name} — ${layoutName}`:name} scorecard…`};render();
+  const lookupRow={...(row||{}),layoutName};
+  try{return await loadGolfCourseApiIntoDraft(name,lookupRow,quiet);}catch(primaryErr){
+    if(primaryErr?.requiresLayout)return null;
+    try{return await loadOpenGolfIntoDraft(courseLookupName({name,venueName:name,layoutName}),lookupRow,quiet);}catch(openErr){
       courseSearchState={...courseSearchState,status:'selected',message:`${name}: this scorecard is not in the RoundKaki library yet. Review or enter the club scorecard before play.`};render();if(!quiet)toast('Scorecard needs verification.');
       console.warn('Course lookup failed',primaryErr,openErr);
     }
@@ -449,9 +461,97 @@ async function submitCurrentCourseForReview(){
   const valid=pars.length===18&&pars.every(v=>Number.isFinite(v)&&v>=3&&v<=6)&&sis.length===18&&sis.every((v,i)=>v===i+1);
   if(!valid)return toast('Complete Par and SI 1–18 before submitting.');
   try{
-    await courseDataProxy('submit',{course_name:draft.course.name,tee_name:draft.course.tee||'',payload:{name:draft.course.name,tee:draft.course.tee||'',holes:draft.course.holes,apiTees:draft.course.apiTees||[],latitude:draft.course.latitude??null,longitude:draft.course.longitude??null}});
+    await courseDataProxy('submit',{course_name:courseVenueName(draft.course),layout_name:courseLayoutName(draft.course),tee_name:draft.course.tee||'',payload:{name:courseVenueName(draft.course),venueName:courseVenueName(draft.course),layoutName:courseLayoutName(draft.course),tee:draft.course.tee||'',holes:draft.course.holes,apiTees:draft.course.apiTees||[],latitude:draft.course.latitude??null,longitude:draft.course.longitude??null}});
     toast('Scorecard submitted for RoundKaki verification.');
   }catch(e){toast(e.message||'Could not submit scorecard.');}
+}
+
+
+function scorecardScannerHTML(){
+  const sc=scorecardScanner||{};
+  const parsed=sc.parsed||{};
+  const counts={par:parsed.pars?.filter(Number.isFinite).length||0,si:parsed.sis?.filter(Number.isFinite).length||0,red:parsed.tees?.Red?.filter(Number.isFinite).length||0,white:parsed.tees?.White?.filter(Number.isFinite).length||0,blue:parsed.tees?.Blue?.filter(Number.isFinite).length||0,black:parsed.tees?.Black?.filter(Number.isFinite).length||0};
+  return `<div class="scorecard-scan-backdrop"><div class="scorecard-scan"><div class="row between"><div><h2 style="margin:0">📷 Scan Scorecard</h2><div class="smalltxt muted">Photo → Par · SI · tee distances</div></div><button class="icon-btn" data-action="close-scorecard-scan">✕</button></div>
+  <div class="notice greenish" style="margin-top:10px"><b>Multiple-course clubs supported</b><br>Choose the exact course/layout shown on this scorecard. Example: Palm Resort → Cempaka. Each layout keeps its own 18-hole scorecard.</div>
+  <div class="course-layout-row" style="margin-top:12px"><label class="field"><span>Golf club / venue</span><input class="input" id="scanVenue" value="${esc(sc.venueName||courseVenueName(draft?.course)||'')}" placeholder="Palm Resort Golf & Country Club"></label><label class="field"><span>Course / layout</span><input class="input" id="scanLayout" value="${esc(sc.layoutName||courseLayoutName(draft?.course)||'')}" placeholder="Cempaka"></label></div>
+  <label class="field"><span>Scorecard photo</span><input class="input" id="scanScorecardFile" type="file" accept="image/*" capture="environment"></label>
+  <div class="scan-preview">${sc.previewUrl?`<img src="${esc(sc.previewUrl)}" alt="Scorecard preview">`:'<div class="muted smalltxt" style="text-align:center;padding:24px">Take a clear, straight photo of the full scorecard.<br>Avoid glare and keep tee labels visible.</div>'}</div>
+  ${sc.status==='reading'?`<div class="notice greenish"><b>Reading scorecard… ${Math.round(sc.progress||0)}%</b><div class="scan-progress"><i style="width:${Math.round(sc.progress||0)}%"></i></div><div class="tiny" style="margin-top:6px">OCR runs in your browser. Keep this screen open.</div></div>`:''}
+  ${sc.error?`<div class="notice redish"><b>Could not read everything</b><br>${esc(sc.error)}</div>`:''}
+  ${sc.parsed?`<div class="scan-grid" style="margin-top:10px"><div class="scan-stat"><span class="tiny muted">Par detected</span><b>${counts.par}/18</b></div><div class="scan-stat"><span class="tiny muted">SI detected</span><b>${counts.si}/18</b></div><div class="scan-stat"><span class="tiny muted">Tee distances</span><b>${[counts.red,counts.white,counts.blue,counts.black].filter(x=>x===18).length}</b><span class="tiny muted"> complete colours</span></div><div class="scan-stat"><span class="tiny muted">Unit</span><b>${esc((sc.unit||'m').toUpperCase())}</b></div></div>
+  <label class="field" style="margin-top:10px"><span>Distance unit printed on scorecard</span><select class="select" id="scanUnit"><option value="m" ${(sc.unit||'m')==='m'?'selected':''}>Metres</option><option value="yd" ${sc.unit==='yd'?'selected':''}>Yards</option></select></label>
+  <div class="tiny muted">Detected tee rows: ${['Red','White','Blue','Black'].filter(t=>counts[t.toLowerCase()]>0).map(t=>`${teeEmoji(t)} ${t} ${counts[t.toLowerCase()]}/18`).join(' · ')||'none yet'}</div>`:''}
+  <div class="profile-actions"><button class="btn outline" data-action="close-scorecard-scan">Cancel</button>${sc.previewUrl&&sc.status!=='reading'?`<button class="btn soft" data-action="scan-scorecard-read">${sc.parsed?'Read Again':'Read Scorecard'}</button>`:''}${sc.parsed?`<button class="btn" data-action="scan-scorecard-apply">Use & Review Data</button>`:''}</div>
+  <p class="auth-note">The original photo is not saved to the RoundKaki cloud. Only structured scorecard values are submitted if you later choose to share them for verification.</p></div></div>`;
+}
+function openScorecardScanner(){
+  scorecardScanner={status:'idle',progress:0,previewUrl:null,file:null,parsed:null,error:'',unit:'m',venueName:courseVenueName(draft?.course),layoutName:courseLayoutName(draft?.course)};render();
+}
+function closeScorecardScanner(){
+  if(scorecardScanner?.previewUrl)URL.revokeObjectURL(scorecardScanner.previewUrl);
+  scorecardScanner=null;render();
+}
+function extractNumbers(line){return (String(line||'').match(/\d+(?:[.,]\d+)?/g)||[]).map(x=>Number(x.replace(',','.'))).filter(Number.isFinite);}
+function first18ByRange(nums,min,max){return nums.filter(n=>n>=min&&n<=max).slice(0,18);}
+function scanRow(lines,labelRe,min,max){
+  const out=[];const anyLabel=/\b(?:par|si|s\.i\.?|stroke\s*index|index|hcp|handicap|red|white|blue|black)\b/i;
+  for(let i=0;i<lines.length&&out.length<18;i++){
+    if(!labelRe.test(lines[i]))continue;
+    let buf=lines[i];
+    for(let j=1;j<=2&&first18ByRange(extractNumbers(buf),min,max).length<9&&i+j<lines.length;j++){if(anyLabel.test(lines[i+j]))break;buf+=' '+lines[i+j];}
+    const vals=first18ByRange(extractNumbers(buf),min,max);if(vals.length>=9)out.push(...vals);
+  }
+  return out.slice(0,18);
+}
+function parseScorecardOCR(text){
+  const lines=String(text||'').split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const pars=scanRow(lines,/\bpar\b/i,3,6);
+  let sis=scanRow(lines,/\b(?:si|s\.i\.?|stroke\s*index|index|hcp|handicap)\b/i,1,18);
+  if(sis.length===18&&new Set(sis).size!==18)sis=[];
+  const tees={};
+  for(const t of STANDARD_TEES){const vals=scanRow(lines,new RegExp(`\\b${t}\\b`,'i'),50,750);if(vals.length)tees[t]=vals;}
+  const low=String(text||'').toLowerCase();const unit=/\byards?\b|\byds?\b/.test(low)?'yd':(/\bmetres?\b|\bmeters?\b|\bm\b/.test(low)?'m':'m');
+  return {pars:Array.from({length:18},(_,i)=>pars[i]??null),sis:Array.from({length:18},(_,i)=>sis[i]??null),tees:Object.fromEntries(Object.entries(tees).map(([k,v])=>[k,Array.from({length:18},(_,i)=>v[i]??null)])),rawText:text,unit};
+}
+async function loadTesseractLibrary(){
+  if(window.Tesseract)return window.Tesseract;
+  await new Promise((resolve,reject)=>{const x=document.createElement('script');x.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';x.onload=resolve;x.onerror=()=>reject(new Error('OCR library could not be loaded. Check your internet connection.'));document.head.appendChild(x);});
+  if(!window.Tesseract)throw new Error('OCR library unavailable.');return window.Tesseract;
+}
+async function readScorecardPhoto(){
+  if(!scorecardScanner?.file)return toast('Choose or take a scorecard photo first.');
+  scorecardScanner.status='reading';scorecardScanner.progress=1;scorecardScanner.error='';render();
+  try{
+    const T=await loadTesseractLibrary();
+    const out=await T.recognize(scorecardScanner.file,'eng',{logger:m=>{if(m.status==='recognizing text'&&Number.isFinite(m.progress)){scorecardScanner.progress=Math.max(2,m.progress*100);const bar=document.querySelector('.scan-progress i');if(bar)bar.style.width=`${Math.round(scorecardScanner.progress)}%`;}}});
+    const parsed=parseScorecardOCR(out?.data?.text||'');scorecardScanner.parsed=parsed;scorecardScanner.unit=parsed.unit||'m';scorecardScanner.status='done';scorecardScanner.progress=100;
+    const p=parsed.pars.filter(Number.isFinite).length,si=parsed.sis.filter(Number.isFinite).length;if(p<18||si<18)scorecardScanner.error=`Detected ${p}/18 Par values and ${si}/18 SI values. You can still use the scan and correct missing cells in Review.`;
+  }catch(e){scorecardScanner.status='done';scorecardScanner.error=e.message||'OCR failed.';}render();
+}
+function applyScannedScorecard(){
+  const sc=scorecardScanner;if(!sc?.parsed||!draft)return;
+  const venue=String(document.getElementById('scanVenue')?.value||sc.venueName||courseVenueName(draft.course)).trim();
+  const layout=String(document.getElementById('scanLayout')?.value||sc.layoutName||courseLayoutName(draft.course)).trim();
+  const unit=document.getElementById('scanUnit')?.value||sc.unit||'m';
+  if(!venue)return toast('Enter the golf club / venue name.');
+  const c={...defaultCourse(),...draft.course,name:venue,venueName:venue,layoutName:layout,layoutType:'18-hole',provider:'RoundKaki Scorecard Scan',verificationStatus:'community'};
+  c.holes=c.holes.map((h,i)=>({...h,par:sc.parsed.pars[i]??h.par,si:sc.parsed.sis[i]??h.si}));
+  const apiTees=[];
+  for(const t of STANDARD_TEES){const vals=sc.parsed.tees?.[t];if(!vals?.some(Number.isFinite))continue;apiTees.push({key:`scan:${t.toLowerCase()}`,label:t,tee_name:t,gender:t==='Red'?'female':'male',source:'RoundKaki Scorecard Scan',holes:Array.from({length:18},(_,i)=>({par:c.holes[i].par,handicap:c.holes[i].si,meters:unit==='yd'&&Number.isFinite(vals[i])?Math.round(vals[i]*0.9144):vals[i]??null,yardage:unit==='yd'?vals[i]??null:(Number.isFinite(vals[i])?Math.round(vals[i]/0.9144):null)}))});}
+  if(apiTees.length){c.apiTees=apiTees;c.availableTees=apiTees.map(t=>t.key);const white=apiTees.find(t=>normalizeTeeColor(t.tee_name)==='White')||apiTees[0];c.tee=white.key;applyTeeToCourse(c,c.tee);}
+  draft.course=c;saveCourseCache(c);courseSearchState={status:'selected',results:[],message:`${courseDisplayName(c)}: scanned scorecard loaded. Review every Par / SI before play.`};
+  if(sc.previewUrl)URL.revokeObjectURL(sc.previewUrl);scorecardScanner=null;render();setTimeout(()=>document.getElementById('courseHoles')?.classList.remove('hidden'),30);toast('Scorecard scan applied. Please review it.');
+}
+async function loadAvailableLayouts(){
+  if(!draft?.course?.name)return [];
+  try{const out=await courseDataProxy('layouts',{name:courseVenueName(draft.course)});const layouts=Array.isArray(out?.layouts)?out.layouts:[];draft.course.availableLayouts=layouts;render();return layouts;}catch{return [];}
+}
+function switchCourseLayout(layout){
+  const venue=courseVenueName(draft.course);const wanted=String(layout||'').trim();
+  if(wanted===courseLayoutName(draft.course))return;
+  const cached=db.courseCache.find(c=>normalizeCourseName(courseVenueName(c))===normalizeCourseName(venue)&&normalizeCourseName(courseLayoutName(c))===normalizeCourseName(wanted));
+  if(cached){draft.course=clone(cached);courseSearchState={status:'selected',results:[],message:`Loaded saved scorecard for ${courseDisplayName(cached)}.`};render();return;}
+  const keep={name:venue,venueName:venue,layoutName:wanted,latitude:draft.course.latitude,longitude:draft.course.longitude,osm:draft.course.osm};draft.course={...defaultCourse(),...keep};courseSearchState={status:'idle',results:[],message:''};render();if(venue)refreshScorecardFromWeb({name:venue,layoutName:wanted},true);
 }
 
 function currentPosition(){
@@ -481,7 +581,7 @@ async function findNearbyCourses(){
     courseSearchState={status:'results',results:rows,message:rows.length?'Select your course.':'No mapped golf course found within 25 km.',lat,lon}; render();
   }catch(e){courseSearchState={status:'error',results:[],message:e.message||'Unable to use GPS.'};render();}
 }
-function courseCacheKey(c){return c?.osmType&&c?.osmId?`${c.osmType}/${c.osmId}`:`name/${String(c?.name||'').toLowerCase()}`;}
+function courseCacheKey(c){const layout=courseLayoutName(c);return c?.osmType&&c?.osmId?`${c.osmType}/${c.osmId}${layout?`/${normalizeCourseName(layout)}`:''}`:`name/${courseLibraryKeyLocal(c)}`;}
 function saveCourseCache(course){
   const key=courseCacheKey(course),copy=clone(course); const idx=db.courseCache.findIndex(c=>courseCacheKey(c)===key);
   if(idx>=0)db.courseCache[idx]=copy;else db.courseCache.unshift(copy); db.courseCache=db.courseCache.slice(0,220);saveDB();
@@ -723,7 +823,7 @@ function cancelActiveRound(){
   const r=db.activeRound; if(!r)return;
   const played=r.holes.filter(h=>h.locked&&allScoresEntered(r,h)).length;
   const detail=played?` ${played} completed hole${played===1?'':'s'} will be discarded.`:'';
-  const ok=window.confirm(`Cancel this round at ${r.course.name}?${detail} Kaki strokes and game history will NOT be updated.`);
+  const ok=window.confirm(`Cancel this round at ${courseDisplayName(r.course)}?${detail} Kaki strokes and game history will NOT be updated.`);
   if(!ok)return;
   db.activeRound=null; saveDB(); gpsHoleState=null; view='home'; render(); toast('Round cancelled.');
 }
@@ -844,6 +944,7 @@ function render(){
   else if(view==='settings') app.innerHTML=settingsView();
   else if(view==='account') app.innerHTML=accountView();
   if(playerEditor) app.insertAdjacentHTML('beforeend',playerEditorHTML());
+  if(scorecardScanner) app.insertAdjacentHTML('beforeend',scorecardScannerHTML());
   bind();
 }
 
@@ -896,10 +997,10 @@ function homeView(){
   const active=db.activeRound;
   return `<main class="shell">${header(false)}
   <section class="hero"><div class="eyebrow">Your golf group, remembered</div><h2>One score.<br>Every game.</h2><p>Kaki strokes, UP declarations, Baccarat Golf points, partners and match history — tracked hole by hole.</p><div class="hero-actions"><button class="btn lime" data-action="new-game">+ Create Game</button>${active?'<button class="btn white" data-action="continue">Continue Round</button>':db.history.length?'<button class="btn white" data-action="repeat-last">Repeat Last Setup</button>':'<button class="btn white" data-action="history">Game History</button>'}</div></section>
-  ${active?`<div class="section-title"><h3>Active round</h3><span>Hole ${active.currentHole} / 18</span></div><section class="card active-card"><div class="row between"><div><b>${esc(active.course.name)}</b><div class="smalltxt muted">${active.players.map(p=>esc(p.name)).join(' · ')}</div></div><button class="btn small" data-action="continue">Open</button></div></section>`:''}
+  ${active?`<div class="section-title"><h3>Active round</h3><span>Hole ${active.currentHole} / 18</span></div><section class="card active-card"><div class="row between"><div><b>${esc(courseDisplayName(active.course))}</b><div class="smalltxt muted">${active.players.map(p=>esc(p.name)).join(' · ')}</div></div><button class="btn small" data-action="continue">Open</button></div></section>`:''}
   ${!isInstalledApp()?`<section class="card" style="margin-top:12px"><div class="row between"><div><b>📲 Install RoundKaki</b><div class="smalltxt muted">Full-screen app · offline scoring · home-screen icon</div></div><button class="btn small lime" data-action="install-app">${deferredInstallPrompt?'Install':isIOSDevice?'How to install':'Install'}</button></div></section>`:''}
   ${authSession?`<section class="card account-card" style="margin-top:12px"><div class="row between"><div><b>👤 ${esc(authProfile?.full_name||authSession.user.email||'Signed in')}</b><div class="smalltxt muted">@${esc(authProfile?.roundkaki_id||'profile')} · ${cloudMode==='active'?'Cloud sync on':'Cloud setup'}</div></div><button class="btn small outline" data-action="account">Account</button></div></section>`:`<section class="card" style="margin-top:12px"><div class="row between"><div><b>☁️ Save your golf history</b><div class="smalltxt muted">Create a free RoundKaki account</div></div><button class="btn small" data-action="account">Sign in</button></div></section>`}
-  <div class="section-title"><h3>Quick access</h3><span>Release v3.2</span></div>
+  <div class="section-title"><h3>Quick access</h3><span>Release v3.4</span></div>
   <div class="quick-grid">
     <button class="quick" data-action="new-game"><div class="qicon">⛳</div><b>Create Game</b><span>Set up a round</span></button>
     <button class="quick" data-action="players"><div class="qicon">👥</div><b>Players</b><span>HCP & Kaki strokes</span></button>
@@ -933,16 +1034,21 @@ function stepCourse(){
   const sis=draft.course.holes.map(h=>Number(h.si)).sort((a,b)=>a-b);
   const courseReady=pars.length===18&&pars.every(v=>Number.isFinite(v)&&v>=3&&v<=6)&&sis.length===18&&sis.every((v,i)=>v===i+1);
   const parTotal=courseReady?pars.reduce((a,b)=>a+b,0):null;
+  const layout=draft.course.layoutName||'';
+  const layouts=[...(draft.course.availableLayouts||[])];
   let geoHTML='';
   if(['locating','loading','loading-holes','loading-scorecard'].includes(geo.status)) geoHTML=`<div class="geo-card"><b>📍 ${esc(geo.message)}</b><div class="tiny muted" style="margin-top:4px">Keep RoundKaki open while the lookup completes.</div></div>`;
   else if(geo.status==='error') geoHTML=`<div class="notice" style="margin-top:9px"><b>Course lookup unavailable</b><br>${esc(geo.message)} You can still search or enter the course name.</div>`;
   else if(geo.status==='results') geoHTML=`<div class="geo-card"><b>Courses near you</b>${geo.results.map((c,i)=>`<button class="course-result" data-near-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${c.distanceKm.toFixed(1)} km away</span></div><span>›</span></button>`).join('')}</div>`;
   else if(geo.status==='selected') geoHTML=`<div class="notice greenish" style="margin-top:9px"><b>✓ Course selected</b><br>${esc(geo.message)}</div>`;
-  return `<h2>Where are you playing?</h2><p>Choose your course. RoundKaki will load its scorecard automatically.</p>
+  return `<h2>Where are you playing?</h2><p>Select the golf venue and, where applicable, the exact 18-hole course/layout.</p>
   <button class="btn lime wide" data-action="find-course-near-me">📍 Find Course Near Me</button>${geoHTML}
-  ${saved.length?`<section class="card" style="margin-top:10px"><div class="row between"><b class="smalltxt">Recent courses</b><span class="tiny muted">saved on this device</span></div>${saved.slice(0,5).map((c,i)=>`<button class="course-result" data-saved-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${c.holes?.length===18?'18-hole scorecard':'Saved course'}</span></div><span>›</span></button>`).join('')}</section>`:''}
-  <section class="card" style="margin-top:14px"><label class="field"><span>Course name</span><input class="input" id="courseName" list="malaysiaCourseList" autocomplete="off" placeholder="Search Malaysia courses…" value="${esc(draft.course.name)}"><datalist id="malaysiaCourseList">${MALAYSIA_COURSES.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>
-  ${courseReady?`<div class="notice greenish" style="margin-top:4px"><div class="row between"><div><b>✓ Course data ready</b><br><span class="smalltxt">18 holes · Par ${parTotal} · SI 1–18 ready${draft.course.verificationStatus==='verified'?' · RoundKaki verified':''}</span></div><button class="btn small outline" data-action="toggle-course-holes">Review</button></div>${authSession?`<button class="btn small soft" style="margin-top:9px" data-action="submit-course-review">Share scorecard for RoundKaki verification</button>`:''}</div>`:`<div class="notice" style="margin-top:4px"><b>⚠️ Course data incomplete</b><br><span class="smalltxt">RoundKaki needs the Par and real Stroke Index for all 18 holes before play.</span><div class="row" style="gap:8px;margin-top:9px"><button class="btn small soft" data-action="refresh-web-scorecard">Load Course Scorecard</button><button class="btn small outline" data-action="toggle-course-holes">Review / Enter Scorecard</button></div></div>`}
+  ${saved.length?`<section class="card" style="margin-top:10px"><div class="row between"><b class="smalltxt">Recent courses</b><span class="tiny muted">saved on this device</span></div>${saved.slice(0,5).map((c,i)=>`<button class="course-result" data-saved-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(courseDisplayName(c))}</b><span>${c.holes?.length===18?'18-hole scorecard':'Saved course'}</span></div><span>›</span></button>`).join('')}</section>`:''}
+  <section class="card" style="margin-top:14px"><label class="field"><span>Golf club / venue</span><input class="input" id="courseName" list="malaysiaCourseList" autocomplete="off" placeholder="Search Malaysia golf clubs…" value="${esc(courseVenueName(draft.course))}"><datalist id="malaysiaCourseList">${MALAYSIA_COURSES.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>
+  <label class="field"><span>Course / layout <span class="muted">(leave blank for a single-course club)</span></span><input class="input" id="layoutName" list="courseLayoutList" autocomplete="off" placeholder="e.g. Cempaka, East Course, Palm + Putra" value="${esc(layout)}"><datalist id="courseLayoutList">${layouts.map(x=>`<option value="${esc(x.layout_name||x.name||x)}"></option>`).join('')}</datalist></label>
+  <div class="layout-note">A venue can have several separate 18-hole courses or 9-hole combinations. RoundKaki stores each layout independently so Par, SI and tee distances never get mixed.</div>
+  ${layouts.length?`<div class="row wrap" style="margin:9px 0">${layouts.map(x=>{const n=x.layout_name||x.name||x;return `<button class="pill ${normalizeCourseName(n)===normalizeCourseName(layout)?'active':''}" data-layout-choice="${esc(n)}">${esc(n)}</button>`}).join('')}</div>`:''}
+  ${courseReady?`<div class="notice greenish" style="margin-top:10px"><div class="row between"><div><b>✓ Course data ready</b><br><span class="smalltxt">${layout?`<span class="layout-chip">⛳ ${esc(layout)}</span> · `:''}18 holes · Par ${parTotal} · SI 1–18 ready${draft.course.verificationStatus==='verified'?' · RoundKaki verified':''}</span></div><button class="btn small outline" data-action="toggle-course-holes">Review</button></div><div class="row wrap" style="margin-top:9px"><button class="btn small soft" data-action="open-scorecard-scan">📷 Scan another scorecard</button>${authSession?`<button class="btn small soft" data-action="submit-course-review">Share for verification</button>`:''}</div></div>`:`<div class="notice" style="margin-top:10px"><b>⚠️ Course data incomplete</b><br><span class="smalltxt">RoundKaki needs the Par and real Stroke Index for all 18 holes for this exact layout.</span><div class="row wrap" style="gap:8px;margin-top:9px"><button class="btn small soft" data-action="refresh-web-scorecard">Load Course Scorecard</button><button class="btn small lime" data-action="open-scorecard-scan">📷 Scan Scorecard</button><button class="btn small outline" data-action="toggle-course-holes">Enter Manually</button></div></div>`}
   <div id="courseHoles" class="course-holes hidden" style="margin-top:10px">${draft.course.holes.map(h=>`<div class="hole-mini"><b>H${h.hole}</b><div class="labels"><span>Par</span><span>SI</span><span>m</span></div><div class="mini-fields"><input data-hole-par="${h.hole}" type="number" min="3" max="6" value="${h.par??''}" placeholder="—" title="Par"><input data-hole-si="${h.hole}" type="number" min="1" max="18" value="${h.si??''}" placeholder="—" title="Stroke Index"><input data-hole-dist="${h.hole}" type="number" min="0" max="800" value="${h.distance??''}" placeholder="—" title="Distance metres"></div></div>`).join('')}</div>
   </section>
   <button class="btn wide" style="margin-top:10px" data-action="wizard-next">Choose Players →</button>`;
@@ -978,7 +1084,7 @@ function stepGames(){
 
 function stepReview(){
   return `<h2>Ready to tee off?</h2><p>Review the round. You can still go back and change anything.</p>
-  <section class="card" style="margin-top:14px"><div class="eyebrow green">Course</div><h3 style="margin:4px 0">${esc(draft.course.name)}</h3><div class="smalltxt muted">18 holes · individual player tees</div><div class="divider"></div><div class="eyebrow green">Players</div><div class="row wrap" style="margin-top:8px">${draft.playerIds.map(id=>{const p=player(id);return `<span class="pill active">${esc(p?.name)} · HCP ${p?.handicap} · ${esc(draft.playerTees?.[id]||preferredTeeForPlayer(p))}</span>`}).join('')}</div><div class="divider"></div><div class="eyebrow green">Games</div><div class="row wrap" style="margin-top:8px">${Object.entries(draft.games).filter(x=>x[1]).map(([k])=>`<span class="pill">${({baccarat:'🃏 Baccarat',match:'🏆 Match',skins:'🔥 Skins',snake:'🐍 Snake',team:'🤝 Partners'})[k]}</span>`).join('')}</div></section>
+  <section class="card" style="margin-top:14px"><div class="eyebrow green">Course</div><h3 style="margin:4px 0">${esc(courseDisplayName(draft.course))}</h3><div class="smalltxt muted">18 holes · individual player tees</div><div class="divider"></div><div class="eyebrow green">Players</div><div class="row wrap" style="margin-top:8px">${draft.playerIds.map(id=>{const p=player(id);return `<span class="pill active">${esc(p?.name)} · HCP ${p?.handicap} · ${esc(draft.playerTees?.[id]||preferredTeeForPlayer(p))}</span>`}).join('')}</div><div class="divider"></div><div class="eyebrow green">Games</div><div class="row wrap" style="margin-top:8px">${Object.entries(draft.games).filter(x=>x[1]).map(([k])=>`<span class="pill">${({baccarat:'🃏 Baccarat',match:'🏆 Match',skins:'🔥 Skins',snake:'🐍 Snake',team:'🤝 Partners'})[k]}</span>`).join('')}</div></section>
   <section class="card"><b>Stroke memory</b><div class="smalltxt muted" style="margin-top:4px">${Object.values(draft.pairStrokes).map(s=>`${esc(player(s.receiverId)?.name)} gets ${s.strokes} from ${esc(player(s.lowId)?.name)}`).join(' · ')}</div></section>
   <div class="notice greenish"><b>Before every hole</b><br>Each player declares SINGLE or UP. Lock declarations before teeing off. The exact declaration is time-stamped and saved with that hole.</div>
   <button class="btn lime wide" style="margin-top:12px" data-action="start-round">START ROUND ⛳</button>`;
@@ -989,8 +1095,8 @@ function roundView(){
   const h=r.holes[r.currentHole-1], ch=r.course.holes[r.currentHole-1];
   const pairs=(h.locked&&allScoresEntered(r,h))?holePairResults(r,h):[];
   const ledger=baccaratLedger(r), skins=skinsState(r), snake=snakeState(r), team=teamState(r);
-  return `<main class="shell">${header(true,r.course.name)}
-  <div class="round-top"><div class="hole-header"><div><div class="eyebrow">INDIVIDUAL TEES · ${esc(r.course.name)}</div><h2>Hole ${h.hole}</h2></div><div class="navhole"><button data-hole-nav="-1">‹</button><button data-hole-nav="1">›</button></div></div>${r.course.holes.some(x=>Number.isFinite(x.centerLat))?`<div class="gps-helper"><div><b>📍 GPS Hole Helper</b><br><span>${gpsHoleState?.message?esc(gpsHoleState.message):'Suggest nearest mapped hole and approximate pin distance.'}</span></div><button class="btn small outline" data-action="gps-hole">Locate</button></div>`:''}</div>
+  return `<main class="shell">${header(true,courseDisplayName(r.course))}
+  <div class="round-top"><div class="hole-header"><div><div class="eyebrow">INDIVIDUAL TEES · ${esc(courseDisplayName(r.course))}</div><h2>Hole ${h.hole}</h2></div><div class="navhole"><button data-hole-nav="-1">‹</button><button data-hole-nav="1">›</button></div></div>${r.course.holes.some(x=>Number.isFinite(x.centerLat))?`<div class="gps-helper"><div><b>📍 GPS Hole Helper</b><br><span>${gpsHoleState?.message?esc(gpsHoleState.message):'Suggest nearest mapped hole and approximate pin distance.'}</span></div><button class="btn small outline" data-action="gps-hole">Locate</button></div>`:''}</div>
   <div class="row between" style="margin:8px 0 2px"><button class="btn small outline" data-action="round-summary">Round Overview</button><button class="btn small danger" data-action="cancel-round">Cancel Round</button></div>
   ${r.games.baccarat?`<div class="section-title"><h3>1 · Declare UP</h3><span>${h.locked?'Locked ✓':'Before tee-off'}</span></div><section class="card"><div class="declare-grid">${r.players.map(p=>`<div class="declare ${h.locked?'locked':''}"><div class="name">${esc(p.name)}</div><div class="seg"><button ${h.locked?'disabled':''} class="${!h.up[p.id]?'active single':''}" data-up="${p.id}" data-v="0">SINGLE</button><button ${h.locked?'disabled':''} class="${h.up[p.id]?'active up':''}" data-up="${p.id}" data-v="1">UP ×2</button></div></div>`).join('')}</div><button class="btn ${h.locked?'outline':'lime'} wide" style="margin-top:10px" data-action="${h.locked?'unlock-hole':'lock-hole'}">${h.locked?'Edit / Unlock Hole':'LOCK DECLARATIONS'}</button>${h.locked?'<div class="tiny muted" style="margin-top:7px;text-align:center">UP/SINGLE is saved with this hole.</div>':''}</section>`:`<section class="card"><div class="row between"><div><b>${h.locked?'Hole ready ✓':'Start this hole'}</b><div class="tiny muted">Lock the hole before entering scores.</div></div><button class="btn small ${h.locked?'outline':'lime'}" data-action="${h.locked?'unlock-hole':'lock-hole'}">${h.locked?'Unlock':'START'}</button></div></section>`}
   <section class="card"><div class="row between"><b>Stroke check · SI ${ch.si}</b><span class="tiny muted">pair-by-pair</span></div><div class="smalltxt muted" style="margin-top:7px">${holeStrokeHTML(r,h.hole)}</div></section>
@@ -1045,7 +1151,7 @@ function pairMatchHTML(r){
 
 function roundSummaryOverlay(){
   const r=db.activeRound, ledger=baccaratLedger(r), played=r.holes.filter(h=>h.locked&&allScoresEntered(r,h)).length;
-  return `<main class="shell">${header(true,'Round Overview')}<section class="result-hero"><div class="trophy">⛳</div><h2>${esc(r.course.name)}</h2><div class="muted">${played} / 18 holes completed</div></section>${r.games.baccarat?`<section class="card"><b>Baccarat ledger</b><div class="ledger" style="margin-top:10px">${ledgerHTML(r,ledger)}</div></section>`:''}<section class="card"><b>Hole status</b><div class="course-holes" style="margin-top:9px">${r.holes.map(h=>`<button class="hole-mini" data-jump-hole="${h.hole}" style="text-align:left;background:${h.locked?'#eef8f1':'#fff'}"><b>H${h.hole}</b><div class="tiny muted">${h.locked&&allScoresEntered(r,h)?'✓ scored':h.locked?'locked':'open'}</div></button>`).join('')}</div></section><button class="btn wide" data-action="back-to-round">Back to Hole ${r.currentHole}</button><button class="btn outline wide" style="margin-top:8px" data-action="save-exit-round">Save & Exit to Home</button><button class="btn danger wide" style="margin-top:8px" data-action="cancel-round">Cancel & Discard Round</button><button class="btn danger wide" style="margin-top:8px;background:#fff;color:#88333d" data-action="finish-round">Finish Round Now</button></main>`;
+  return `<main class="shell">${header(true,'Round Overview')}<section class="result-hero"><div class="trophy">⛳</div><h2>${esc(courseDisplayName(r.course))}</h2><div class="muted">${played} / 18 holes completed</div></section>${r.games.baccarat?`<section class="card"><b>Baccarat ledger</b><div class="ledger" style="margin-top:10px">${ledgerHTML(r,ledger)}</div></section>`:''}<section class="card"><b>Hole status</b><div class="course-holes" style="margin-top:9px">${r.holes.map(h=>`<button class="hole-mini" data-jump-hole="${h.hole}" style="text-align:left;background:${h.locked?'#eef8f1':'#fff'}"><b>H${h.hole}</b><div class="tiny muted">${h.locked&&allScoresEntered(r,h)?'✓ scored':h.locked?'locked':'open'}</div></button>`).join('')}</div></section><button class="btn wide" data-action="back-to-round">Back to Hole ${r.currentHole}</button><button class="btn outline wide" style="margin-top:8px" data-action="save-exit-round">Save & Exit to Home</button><button class="btn danger wide" style="margin-top:8px" data-action="cancel-round">Cancel & Discard Round</button><button class="btn danger wide" style="margin-top:8px;background:#fff;color:#88333d" data-action="finish-round">Finish Round Now</button></main>`;
 }
 
 function playersView(){
@@ -1055,14 +1161,14 @@ function playersView(){
 }
 
 function historyView(){
-  return `<main class="shell">${header(true,'Game History')}<section class="card">${db.history.length?db.history.map(r=>`<button class="history-item" style="width:100%;border-left:0;border-right:0;border-top:0;background:transparent;text-align:left" data-history="${r.id}"><div class="history-icon">⛳</div><div class="main"><b>${esc(r.course.name)}</b><span>${fmtDate(r.completedAt||r.createdAt)} · ${r.players.map(p=>esc(p.name)).join(', ')}</span></div><span>›</span></button>`).join(''):'<div class="empty">No completed rounds yet.</div>'}</section></main>`;
+  return `<main class="shell">${header(true,'Game History')}<section class="card">${db.history.length?db.history.map(r=>`<button class="history-item" style="width:100%;border-left:0;border-right:0;border-top:0;background:transparent;text-align:left" data-history="${r.id}"><div class="history-icon">⛳</div><div class="main"><b>${esc(courseDisplayName(r.course))}</b><span>${fmtDate(r.completedAt||r.createdAt)} · ${r.players.map(p=>esc(p.name)).join(', ')}</span></div><span>›</span></button>`).join(''):'<div class="empty">No completed rounds yet.</div>'}</section></main>`;
 }
 
 function summaryView(){
   const r=db.history.find(x=>x.id===historyOpenId) || db.history[0];
   if(!r){view='history';return historyView();}
   const led=r.finalLedger||baccaratLedger(r); const order=[...r.players].sort((a,b)=>(led[b.id]||0)-(led[a.id]||0));
-  return `<main class="shell">${header(true,'Round Results')}<section class="result-hero"><div class="trophy">🏆</div><h2>${esc(r.course.name)}</h2><div class="muted">${fmtDate(r.completedAt||r.createdAt)} · ${r.players.map(p=>`${esc(p.name)} ${esc(p.tee||'White')}`).join(' · ')}</div></section>
+  return `<main class="shell">${header(true,'Round Results')}<section class="result-hero"><div class="trophy">🏆</div><h2>${esc(courseDisplayName(r.course))}</h2><div class="muted">${fmtDate(r.completedAt||r.createdAt)} · ${r.players.map(p=>`${esc(p.name)} ${esc(p.tee||'White')}`).join(' · ')}</div></section>
   ${r.games.baccarat?`<section class="card"><b>🃏 Baccarat final</b><div style="margin-top:8px">${order.map((p,i)=>{const v=led[p.id]||0;return `<div class="rank"><div class="place">${i+1}</div><div class="who">${esc(p.name)}</div><div class="bal ${v>0?'positive':v<0?'negative':''}">${v>0?'+':''}${v} pts${moneyRef(r,v)?`<div class="tiny muted">${esc(moneyRef(r,v))}</div>`:''}</div></div>`}).join('')}</div></section>`:''}
   ${r.kakiAdjustments?.length?`<section class="card"><b>🧠 Next-game Kaki strokes</b><div class="tiny muted" style="margin-top:3px">${r.autoUpdateKaki?'Saved automatically':'Recommendations only'}</div>${r.kakiAdjustments.map(a=>{const low=roundPlayer(r,a.lowId),hi=roundPlayer(r,a.receiverId);return `<div class="adjust"><div><b>${esc(low?.name)} → ${esc(hi?.name)}</b><span>${esc(a.reason)}</span></div><div class="delta">${a.current} → ${a.next}</div></div>`}).join('')}</section>`:''}
   ${r.games.baccarat?`<section class="card"><div class="row between"><b>🔥 UP declaration history</b><span class="tiny muted">audit by hole</span></div><div style="margin-top:8px">${upHistoryHTML(r)}</div></section>`:''}
@@ -1073,7 +1179,7 @@ function summaryView(){
 function settingsView(){
   return `<main class="shell">${header(true,'Data & Rules')}
   <section class="card"><b>RoundKaki game rules</b><div class="notice greenish" style="margin-top:10px"><b>Kaki Stroke memory</b><br>Pair-specific strokes are remembered. At round end, a receiver losing by 2+ holes gets +1 next game; winning by 2+ gets −1. You can override any suggested stroke before the next round.</div><div class="notice" style="margin-top:9px"><b>Baccarat Golf</b><br>Strokes apply before comparing each pair. Square is a push. UP/SINGLE is locked per golfer per hole. UP vs UP gives 4 points for a normal win, 8 for Birdie, 16 for Eagle and 32 for an actual Hole-in-One.</div></section>
-  <section class="card"><b>📍 Malaysia Course Library & GPS</b><p class="smalltxt muted">RoundKaki includes the Malaysian course directory and loads available Par, Stroke Index and tee information automatically when you select a course.</p><div class="notice greenish" style="margin-top:10px"><b>No course pack download is required.</b><div class="tiny" style="margin-top:5px">RoundKaki checks its shared course library first. Missing scorecards can be reviewed from the club scorecard and submitted for verification.</div></div><div class="tiny muted" style="margin-top:9px">GPS is requested only when you use Find Course Near Me or the in-round GPS helper. Public map/course sources may be used in the background to improve coverage.</div></section>
+  <section class="card"><b>📍 Malaysia Course Library & GPS</b><p class="smalltxt muted">RoundKaki supports golf venues with one or multiple course layouts. Each layout keeps its own Par, Stroke Index and tee distances.</p><div class="notice greenish" style="margin-top:10px"><b>No course pack download is required.</b><div class="tiny" style="margin-top:5px">RoundKaki checks its shared course library first. Missing scorecards can be reviewed from the club scorecard and submitted for verification.</div></div><div class="tiny muted" style="margin-top:9px">GPS is requested only when you use Find Course Near Me or the in-round GPS helper. Public map/course sources may be used in the background to improve coverage.</div></section>
   <section class="card"><b>Local data backup</b><p class="smalltxt muted">Guest data is stored on this device. When signed in, RoundKaki can also sync players, rounds and Kaki-stroke memory to your private cloud account. Manual export remains available as an extra backup.</p><button class="btn wide" data-action="export-data">Export RoundKaki backup</button><button class="btn outline wide" style="margin-top:8px" data-action="import-data">Import backup</button><input id="importFile" type="file" accept="application/json" class="hidden"></section>
   <section class="card"><b>Golf scoring only</b><p class="smalltxt muted">RoundKaki records golf scores and non-cash points/units. It does not accept stakes, hold funds, facilitate wagering, or process payouts.</p></section>
   <button class="btn danger wide" data-action="reset-data">Reset local demo data</button></main>`;
@@ -1110,8 +1216,14 @@ function bind(){
   document.querySelectorAll('[data-hole-si]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holeSi)-1].si=Number(el.value)});
   document.querySelectorAll('[data-hole-dist]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holeDist)-1].distance=el.value===''?null:Number(el.value)});
   document.querySelectorAll('[data-near-course]').forEach(el=>el.onclick=()=>{const row=courseSearchState.results[Number(el.dataset.nearCourse)];if(row)loadOSMCourse(row);});
-  document.querySelectorAll('[data-saved-course]').forEach(el=>el.onclick=()=>{const c=db.courseCache[Number(el.dataset.savedCourse)];if(c){draft.course=clone(c);courseSearchState={status:'selected',results:[],message:`Loaded saved details for ${c.name}.`};render();}});
-  const cn=document.getElementById('courseName');if(cn){cn.oninput=()=>draft.course.name=cn.value;cn.onchange=()=>{draft.course.name=cn.value;const hit=MALAYSIA_COURSES.find(n=>n.toLowerCase()===cn.value.trim().toLowerCase());if(hit){const cached=db.courseCache.find(c=>normalizeCourseName(c.name)===normalizeCourseName(hit));if(cached){draft.course=clone(cached);courseSearchState={status:'selected',results:[],message:`Loaded cached scorecard for ${hit}.`};render();}else if(!applyVerifiedCoursePack(hit,{quiet:true}))refreshScorecardFromWeb({name:hit},true);}};}
+  document.querySelectorAll('[data-saved-course]').forEach(el=>el.onclick=()=>{const c=db.courseCache[Number(el.dataset.savedCourse)];if(c){draft.course=clone(c);courseSearchState={status:'selected',results:[],message:`Loaded saved details for ${courseDisplayName(c)}.`};render();}});
+  const cn=document.getElementById('courseName');if(cn){cn.oninput=()=>{draft.course.name=cn.value;draft.course.venueName=cn.value;};cn.onchange=async()=>{const venue=cn.value.trim();draft.course.name=venue;draft.course.venueName=venue;const layout=courseLayoutName(draft.course);const cached=db.courseCache.find(c=>normalizeCourseName(courseVenueName(c))===normalizeCourseName(venue)&&normalizeCourseName(courseLayoutName(c))===normalizeCourseName(layout));if(cached){draft.course=clone(cached);courseSearchState={status:'selected',results:[],message:`Loaded cached scorecard for ${courseDisplayName(cached)}.`};render();return;}const layouts=await loadAvailableLayouts();if(!layout&&layouts.length>1){courseSearchState={status:'selected',results:[],message:`${venue} has ${layouts.length} course layouts. Choose the exact course below.`};render();return;}if(!layout&&applyVerifiedCoursePack(venue,{quiet:true}))return;refreshScorecardFromWeb({name:venue,layoutName:layout},true);};}
+  const ln=document.getElementById('layoutName');if(ln){ln.onchange=()=>switchCourseLayout(ln.value);ln.oninput=()=>{draft.course.layoutName=ln.value;};}
+  document.querySelectorAll('[data-layout-choice]').forEach(el=>el.onclick=()=>switchCourseLayout(el.dataset.layoutChoice));
+  const sf=document.getElementById('scanScorecardFile');if(sf)sf.onchange=()=>{const f=sf.files?.[0];if(!f)return;if(scorecardScanner?.previewUrl)URL.revokeObjectURL(scorecardScanner.previewUrl);scorecardScanner.file=f;scorecardScanner.previewUrl=URL.createObjectURL(f);scorecardScanner.parsed=null;scorecardScanner.error='';scorecardScanner.status='idle';render();};
+  const su=document.getElementById('scanUnit');if(su)su.onchange=()=>{if(scorecardScanner)scorecardScanner.unit=su.value;};
+  const sv=document.getElementById('scanVenue');if(sv)sv.oninput=()=>{if(scorecardScanner)scorecardScanner.venueName=sv.value;};
+  const sl=document.getElementById('scanLayout');if(sl)sl.oninput=()=>{if(scorecardScanner)scorecardScanner.layoutName=sl.value;};
   const tn=document.getElementById('teeName');if(tn){const f=()=>{applyTeeToCourse(draft.course,tn.value);draft.course.tee=tn.value;if(tn.tagName==='SELECT')render();};tn.oninput=f;tn.onchange=f;}
   const ca=document.getElementById('customAllowance');if(ca)ca.onchange=()=>{draft.allowance=Number(ca.value)||0;initPairStrokes(draft);render();};
   const uh=document.getElementById('useHistory');if(uh)uh.onchange=()=>{draft.useKakiHistory=uh.checked;initPairStrokes(draft);render();};
@@ -1154,6 +1266,10 @@ function action(a,el){
   else if(a==='find-course-near-me') findNearbyCourses();
   else if(a==='refresh-web-scorecard') refreshScorecardFromWeb(null,false);
   else if(a==='submit-course-review') submitCurrentCourseForReview();
+  else if(a==='open-scorecard-scan') openScorecardScanner();
+  else if(a==='close-scorecard-scan') closeScorecardScanner();
+  else if(a==='scan-scorecard-read') readScorecardPhoto();
+  else if(a==='scan-scorecard-apply') applyScannedScorecard();
   else if(a==='sync-malaysia-pack') syncMalaysiaCoursePack();
   else if(a==='install-app') installRoundKaki();
   else if(a==='gps-hole') gpsSuggestHole();
@@ -1169,7 +1285,7 @@ function action(a,el){
 }
 
 function nextWizard(){
-  if(wizardStep===1){ if(!draft.course.name.trim())return toast('Select or enter a course name.'); const pars=draft.course.holes.map(h=>Number(h.par)); if(!pars.every(v=>Number.isFinite(v)&&v>=3&&v<=6))return toast('Load or verify Par for all 18 holes first.'); const sis=draft.course.holes.map(h=>Number(h.si)).sort((a,b)=>a-b); if(!sis.every((v,i)=>v===i+1))return toast('Load or verify the real Stroke Index: SI 1–18 must appear exactly once.'); if(draft.course.provider!=='manual')saveCourseCache(draft.course); }
+  if(wizardStep===1){ if(!courseVenueName(draft.course))return toast('Select or enter a golf club / venue.'); const pars=draft.course.holes.map(h=>Number(h.par)); if(!pars.every(v=>Number.isFinite(v)&&v>=3&&v<=6))return toast('Load or verify Par for all 18 holes first.'); const sis=draft.course.holes.map(h=>Number(h.si)).sort((a,b)=>a-b); if(!sis.every((v,i)=>v===i+1))return toast('Load or verify the real Stroke Index: SI 1–18 must appear exactly once.'); if(draft.course.provider!=='manual')saveCourseCache(draft.course); }
   if(wizardStep===2){ if(draft.playerIds.length<2)return toast('Add at least 2 golfers.'); initPairStrokes(draft); }
   if(wizardStep===4 && !Object.values(draft.games).some(Boolean)) return toast('Select at least one game.');
   wizardStep=Math.min(5,wizardStep+1); render();
@@ -1196,7 +1312,7 @@ function nextHole(){
 function addPlayerPrompt(){openPlayerEditor(null,view==='wizard');}
 function editPlayer(id){openPlayerEditor(id,false);}
 
-window.roundkaki={reset(){localStorage.removeItem(DB_KEY);db=defaultDB();view='home';render();},exportData(){return clone(db);},cloud:{sync:()=>pushCloudState(true)},engine:{strokesOnHole,pairResult,baccaratLedger,pairMatchStatus,parseDistanceMeters,expandHoleElement,apiTeeOptions,openGolfTeeOptions,fetchOpenGolfCoursePackEntry}};
+window.roundkaki={reset(){localStorage.removeItem(DB_KEY);db=defaultDB();view='home';render();},exportData(){return clone(db);},cloud:{sync:()=>pushCloudState(true)},engine:{strokesOnHole,pairResult,baccaratLedger,pairMatchStatus,parseDistanceMeters,expandHoleElement,apiTeeOptions,openGolfTeeOptions,fetchOpenGolfCoursePackEntry,parseScorecardOCR,courseDisplayName}};
 render();
 initSupabaseAuth();
 })();
