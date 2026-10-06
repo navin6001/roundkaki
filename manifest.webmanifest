@@ -12,10 +12,10 @@
   "theme_color": "#0a3d2a",
   "categories": ["sports", "utilities"],
   "icons": [
-    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
-    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
-    {"src":"maskable-192.png","sizes":"192x192","type":"image/png","purpose":"maskable"},
-    {"src":"maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+    {"src":"roundkaki-icon-v21-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"roundkaki-icon-v21-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"roundkaki-maskable-v21-192.png","sizes":"192x192","type":"image/png","purpose":"maskable"},
+    {"src":"roundkaki-maskable-v21-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
   ],
   "shortcuts": [
     {"name":"Open RoundKaki","short_name":"Open","url":"./"}
