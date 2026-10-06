@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a3d2a" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<link rel="manifest" href="manifest.webmanifest?v=2.4" />
-<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=2.4" />
-<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=2.4" />
-<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=2.4" />
+<link rel="manifest" href="manifest.webmanifest?v=2.5" />
+<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=2.5" />
+<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=2.5" />
+<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=2.5" />
 <title>RoundKaki – Golf Games & Scoring</title>
 <style>
 :root{
@@ -44,6 +44,8 @@ button,input,select{font:inherit}button{cursor:pointer}.shell{max-width:720px;mi
 .history-item{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}.history-item:last-child{border-bottom:0}.history-icon{width:42px;height:42px;border-radius:13px;background:var(--soft);display:grid;place-items:center}.history-item .main{flex:1}.history-item b{display:block}.history-item span{font-size:11px;color:var(--muted)}
 .result-hero{text-align:center;padding:24px 14px}.result-hero .trophy{font-size:44px}.result-hero h2{font-size:25px;margin:6px 0}.rank{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.rank:last-child{border-bottom:0}.rank .place{width:28px;color:var(--muted);font-weight:900}.rank .who{flex:1;font-weight:850}.rank .bal{font-weight:950;font-size:17px}.adjust{display:grid;grid-template-columns:1fr auto;gap:8px;border:1px solid var(--line);border-radius:13px;padding:10px;margin-top:7px}.adjust b{font-size:12px}.adjust span{font-size:11px;color:var(--muted)}.delta{font-weight:950;color:var(--green)}
 .empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}.divider{height:1px;background:var(--line);margin:13px 0}.hidden{display:none!important}.footer-note{text-align:center;color:var(--muted);font-size:10px;margin:18px 0}.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:50;background:#14271c;color:#fff;border-radius:12px;padding:10px 13px;font-size:12px;font-weight:800;box-shadow:var(--shadow);animation:fade 2.4s both}@keyframes fade{0%{opacity:0;transform:translate(-50%,8px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+
+.player-editor-backdrop{position:fixed;inset:0;z-index:80;background:rgba(7,28,18,.58);backdrop-filter:blur(5px);display:flex;align-items:flex-end;justify-content:center;padding:12px}.player-editor{width:min(100%,680px);background:#fff;border-radius:24px 24px 18px 18px;padding:18px;box-shadow:0 22px 70px rgba(0,0,0,.28);max-height:92vh;overflow:auto}.player-editor h2{margin:0 0 4px}.tee-profile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:7px}.tee-profile{position:relative;display:grid;place-items:center;gap:5px;min-height:72px;border:2px solid var(--line);border-radius:15px;background:#fff;font-size:11px;font-weight:900;text-align:center;padding:8px}.tee-profile input{position:absolute;opacity:0;pointer-events:none}.tee-profile .dot{width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,0,0,.15);box-shadow:inset 0 0 0 2px rgba(255,255,255,.45)}.tee-profile.red .dot{background:#df3d49}.tee-profile.white .dot{background:#fff}.tee-profile.blue .dot{background:#3478df}.tee-profile.black .dot{background:#202522}.tee-profile:has(input:checked){border-color:var(--green);background:#eff8f2;box-shadow:0 0 0 3px rgba(18,97,63,.08)}.tee-profile:has(input:checked)::after{content:'✓';position:absolute;right:7px;top:5px;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:11px}.profile-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:14px}
 @media(min-width:640px){.quick-grid{grid-template-columns:repeat(4,1fr)}.declare-grid{grid-template-columns:repeat(4,1fr)}.ledger{grid-template-columns:repeat(4,1fr)}.course-holes{grid-template-columns:repeat(6,1fr)}}
 
 </style>
@@ -126,6 +128,7 @@ let courseSearchState = {status:'idle',results:[],message:''};
 let malaysiaPackSyncState = {running:false,done:0,total:MALAYSIA_COURSES.length,success:0,failed:0,message:''};
 let gpsHoleState = null;
 let deferredInstallPrompt = null;
+let playerEditor = null;
 const isIOSDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
 function isInstalledApp(){ return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone===true; }
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredInstallPrompt=e; if(view==='home')render(); });
@@ -672,7 +675,30 @@ function render(){
   else if(view==='history') app.innerHTML=historyView();
   else if(view==='summary') app.innerHTML=summaryView();
   else if(view==='settings') app.innerHTML=settingsView();
+  if(playerEditor) app.insertAdjacentHTML('beforeend',playerEditorHTML());
   bind();
+}
+
+function teeEmoji(t){return ({Red:'🔴',White:'⚪',Blue:'🔵',Black:'⚫'})[normalizeTeeColor(t)]||'⚪';}
+function playerEditorHTML(){
+  if(!playerEditor)return '';
+  const existing=playerEditor.id?player(playerEditor.id):null;
+  const tee=preferredTeeForPlayer(existing||{preferredTee:playerEditor.tee||'White'});
+  const tees=['Red','White','Blue','Black'];
+  return `<div class="player-editor-backdrop"><section class="player-editor" role="dialog" aria-modal="true" aria-label="Golfer setup"><div class="row between"><div><h2>${existing?'Edit Golfer':'New Golfer'}</h2><div class="smalltxt muted">Save each golfer's handicap and normal tee box once.</div></div><button class="icon-btn" data-action="cancel-player-editor">✕</button></div><div class="divider"></div><label class="field"><span>Golfer name</span><input class="input" id="profilePlayerName" autocomplete="name" value="${esc(existing?.name||'')}" placeholder="Enter golfer name"></label><label class="field"><span>Official handicap</span><input class="input" id="profilePlayerHcp" type="number" min="0" max="54" step="0.1" value="${existing?.handicap??18}"></label><div class="field"><span style="display:block;font-size:12px;font-weight:800;margin-bottom:6px;color:#536058">Normal tee box</span><div class="tee-profile-grid">${tees.map(t=>`<label class="tee-profile ${t.toLowerCase()}"><input type="radio" name="profileTee" value="${t}" ${tee===t?'checked':''}><span class="dot"></span><span>${teeEmoji(t)} ${t}</span></label>`).join('')}</div><div class="tiny muted" style="margin-top:8px">This becomes the golfer's default tee for future rounds. You can still change it for a particular round.</div></div><div class="profile-actions"><button class="btn outline" data-action="cancel-player-editor">Cancel</button><button class="btn" data-action="save-player-profile">${existing?'Save Changes':'Add Golfer'}</button></div></section></div>`;
+}
+function openPlayerEditor(id=null,addToDraft=false){playerEditor={id,addToDraft:!!addToDraft,tee:id?preferredTeeForPlayer(player(id)):'White'};render();}
+function savePlayerProfile(){
+  if(!playerEditor)return;
+  const name=document.getElementById('profilePlayerName')?.value?.trim();
+  if(!name)return toast('Enter the golfer name.');
+  const hv=Number(document.getElementById('profilePlayerHcp')?.value); const handicap=Number.isFinite(hv)?Math.max(0,Math.min(54,hv)):18;
+  const tee=normalizeTeeColor(document.querySelector('input[name="profileTee"]:checked')?.value||'White');
+  let p=playerEditor.id?player(playerEditor.id):null;
+  if(p){p.name=name;p.handicap=handicap;p.preferredTee=tee;}
+  else{p={id:uid('p'),name,handicap,preferredTee:tee};db.players.push(p);if(playerEditor.addToDraft&&draft&&!draft.playerIds.includes(p.id)){draft.playerIds.push(p.id);draft.playerTees=draft.playerTees||{};draft.playerTees[p.id]=tee;initPairStrokes(draft);}}
+  if(draft?.playerIds?.includes(p.id)){draft.playerTees=draft.playerTees||{};draft.playerTees[p.id]=tee;initPairStrokes(draft);}
+  saveDB();playerEditor=null;render();toast(`${name} saved · ${teeEmoji(tee)} ${tee} tee`);
 }
 
 function header(back=false,title='RoundKaki'){
@@ -685,7 +711,7 @@ function homeView(){
   <section class="hero"><div class="eyebrow">Your golf group, remembered</div><h2>One score.<br>Every game.</h2><p>Kaki strokes, UP declarations, Baccarat Golf points, partners and match history — tracked hole by hole.</p><div class="hero-actions"><button class="btn lime" data-action="new-game">+ Create Game</button>${active?'<button class="btn white" data-action="continue">Continue Round</button>':db.history.length?'<button class="btn white" data-action="repeat-last">Repeat Last Setup</button>':'<button class="btn white" data-action="history">Game History</button>'}</div></section>
   ${active?`<div class="section-title"><h3>Active round</h3><span>Hole ${active.currentHole} / 18</span></div><section class="card active-card"><div class="row between"><div><b>${esc(active.course.name)}</b><div class="smalltxt muted">${active.players.map(p=>esc(p.name)).join(' · ')}</div></div><button class="btn small" data-action="continue">Open</button></div></section>`:''}
   ${!isInstalledApp()?`<section class="card" style="margin-top:12px"><div class="row between"><div><b>📲 Install RoundKaki</b><div class="smalltxt muted">Full-screen app · offline scoring · home-screen icon</div></div><button class="btn small lime" data-action="install-app">${deferredInstallPrompt?'Install':isIOSDevice?'How to install':'Install'}</button></div></section>`:''}
-  <div class="section-title"><h3>Quick access</h3><span>Release v2.4</span></div>
+  <div class="section-title"><h3>Quick access</h3><span>Release v2.6</span></div>
   <div class="quick-grid">
     <button class="quick" data-action="new-game"><div class="qicon">⛳</div><b>Create Game</b><span>Set up a round</span></button>
     <button class="quick" data-action="players"><div class="qicon">👥</div><b>Players</b><span>HCP & Kaki strokes</span></button>
@@ -714,31 +740,31 @@ function wizardStepContent(){
 
 function stepCourse(){
   const saved=db.courseCache||[];
-  const tees=draft.course.availableTees||[];
-  const teeLabel=t=>draft.course.apiTees?.find(x=>x.key===t)?.label||String(t).replaceAll('_',' ');
-  const teeField=tees.length?`<select class="select" id="teeName">${[...new Set([draft.course.tee,...tees])].map(t=>`<option value="${esc(t)}" ${String(t)===String(draft.course.tee)?'selected':''}>${esc(teeLabel(t))}</option>`).join('')}</select>`:`<input class="input" id="teeName" value="${esc(draft.course.tee)}">`;
   const geo=courseSearchState;
+  const pars=draft.course.holes.map(h=>Number(h.par));
+  const sis=draft.course.holes.map(h=>Number(h.si)).sort((a,b)=>a-b);
+  const courseReady=pars.length===18&&pars.every(v=>Number.isFinite(v)&&v>=3&&v<=6)&&sis.length===18&&sis.every((v,i)=>v===i+1);
+  const parTotal=courseReady?pars.reduce((a,b)=>a+b,0):null;
   let geoHTML='';
   if(['locating','loading','loading-holes','loading-scorecard'].includes(geo.status)) geoHTML=`<div class="geo-card"><b>📍 ${esc(geo.message)}</b><div class="tiny muted" style="margin-top:4px">Keep RoundKaki open while the lookup completes.</div></div>`;
-  else if(geo.status==='error') geoHTML=`<div class="notice" style="margin-top:9px"><b>GPS lookup unavailable</b><br>${esc(geo.message)} You can still enter the course manually.</div>`;
-  else if(geo.status==='results') geoHTML=`<div class="geo-card"><b>Courses near you</b>${geo.results.map((c,i)=>`<button class="course-result" data-near-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${c.distanceKm.toFixed(1)} km away · OpenStreetMap</span></div><span>›</span></button>`).join('')}<div class="source-note">Nearby-course discovery uses OpenStreetMap data. Coverage varies by course.</div></div>`;
-  else if(geo.status==='selected') geoHTML=`<div class="notice greenish" style="margin-top:9px"><b>✓ Course loaded</b><br>${esc(geo.message)}</div>`;
-  return `<h2>Where are you playing?</h2><p>Use GPS to find the course, then RoundKaki will load mapped hole details where available.</p>
+  else if(geo.status==='error') geoHTML=`<div class="notice" style="margin-top:9px"><b>Course lookup unavailable</b><br>${esc(geo.message)} You can still search or enter the course name.</div>`;
+  else if(geo.status==='results') geoHTML=`<div class="geo-card"><b>Courses near you</b>${geo.results.map((c,i)=>`<button class="course-result" data-near-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${c.distanceKm.toFixed(1)} km away</span></div><span>›</span></button>`).join('')}</div>`;
+  else if(geo.status==='selected') geoHTML=`<div class="notice greenish" style="margin-top:9px"><b>✓ Course selected</b><br>${esc(geo.message)}</div>`;
+  return `<h2>Where are you playing?</h2><p>Choose your course. RoundKaki will load its scorecard automatically.</p>
   <button class="btn lime wide" data-action="find-course-near-me">📍 Find Course Near Me</button>${geoHTML}
-  ${saved.length?`<section class="card" style="margin-top:10px"><div class="row between"><b class="smalltxt">Saved courses</b><span class="tiny muted">cached on this device</span></div>${saved.slice(0,5).map((c,i)=>`<button class="course-result" data-saved-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${esc(c.tee||'Tee')} · ${c.holes?.filter(h=>h.osmTags).length||0} mapped holes</span></div><span>›</span></button>`).join('')}</section>`:''}
-  <section class="card" style="margin-top:14px"><label class="field"><span>Course name</span><input class="input" id="courseName" list="malaysiaCourseList" autocomplete="off" placeholder="Search Malaysia courses…" value="${esc(draft.course.name)}"><datalist id="malaysiaCourseList">${MALAYSIA_COURSES.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist><div class="tiny muted" style="margin-top:6px">🇲🇾 ${MALAYSIA_COURSES.length} Malaysia courses are preloaded for quick search. RoundKaki now loads Par / SI from the keyless OpenGolfAPI and caches it for offline reuse; mapped hole layout is merged from OpenStreetMap where available.</div></label><label class="field"><span>Default tee data (fallback)</span>${teeField}<div class="tiny muted" style="margin-top:6px">Each golfer chooses their own Red / White / Blue / Black tee in Step 2. This course tee is used only when tee-specific data is missing.</div></label>
-  ${draft.course.provider&&draft.course.provider!=='manual'?`<div class="tiny muted" style="margin-bottom:9px">Source: ${esc(draft.course.provider)}${draft.course.latitude!=null?` · GPS-linked`:''}${draft.course.webScorecardName?` · Web scorecard: ${esc(draft.course.webScorecardName)}`:''}</div>`:''}
-  <button class="btn soft wide" style="margin-bottom:10px" data-action="refresh-web-scorecard">⛳ Load Course Scorecard</button>
-  <div class="row between"><b class="smalltxt">18-hole setup</b><button class="btn small outline" data-action="toggle-course-holes">Edit / Review Holes</button></div><div id="courseHoles" class="course-holes hidden" style="margin-top:10px">${draft.course.holes.map(h=>`<div class="hole-mini"><b>H${h.hole}</b><div class="labels"><span>Par</span><span>SI</span><span>m</span></div><div class="mini-fields"><input data-hole-par="${h.hole}" type="number" min="3" max="6" value="${h.par??''}" placeholder="—" title="Par"><input data-hole-si="${h.hole}" type="number" min="1" max="18" value="${h.si??''}" placeholder="—" title="SI"><input data-hole-dist="${h.hole}" type="number" min="0" max="800" value="${h.distance??''}" placeholder="—" title="Distance metres"></div></div>`).join('')}</div><div class="source-note">GPS/OpenStreetMap finds the course and map geometry. RoundKaki first checks its built-in verified Malaysia course pack. If a course is not yet verified locally, GPS/OpenStreetMap can supply mapped geometry and an optional owner API key can provide additional scorecard data. RoundKaki never invents missing Stroke Index values: the round cannot start until SI 1–18 are present exactly once and all Pars are valid. Manual scorecard review remains available. © OpenStreetMap contributors.</div></section>
-  <div class="notice greenish" style="margin-top:10px"><b>Course integrity check</b><br>RoundKaki applies strokes by the selected course's actual Stroke Index. SI is never assumed from the hole number. Load web data or review the club scorecard before continuing.</div><button class="btn wide" style="margin-top:10px" data-action="wizard-next">Choose Players →</button>`;
+  ${saved.length?`<section class="card" style="margin-top:10px"><div class="row between"><b class="smalltxt">Recent courses</b><span class="tiny muted">saved on this device</span></div>${saved.slice(0,5).map((c,i)=>`<button class="course-result" data-saved-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${c.holes?.length===18?'18-hole scorecard':'Saved course'}</span></div><span>›</span></button>`).join('')}</section>`:''}
+  <section class="card" style="margin-top:14px"><label class="field"><span>Course name</span><input class="input" id="courseName" list="malaysiaCourseList" autocomplete="off" placeholder="Search Malaysia courses…" value="${esc(draft.course.name)}"><datalist id="malaysiaCourseList">${MALAYSIA_COURSES.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>
+  ${courseReady?`<div class="notice greenish" style="margin-top:4px"><div class="row between"><div><b>✓ Course data ready</b><br><span class="smalltxt">18 holes · Par ${parTotal} · Stroke Index verified</span></div><button class="btn small outline" data-action="toggle-course-holes">Review</button></div></div>`:`<div class="notice" style="margin-top:4px"><b>⚠️ Course data incomplete</b><br><span class="smalltxt">RoundKaki needs the Par and real Stroke Index for all 18 holes before play.</span><div class="row" style="gap:8px;margin-top:9px"><button class="btn small soft" data-action="refresh-web-scorecard">Try Course Lookup</button><button class="btn small outline" data-action="toggle-course-holes">Review / Enter Scorecard</button></div></div>`}
+  <div id="courseHoles" class="course-holes hidden" style="margin-top:10px">${draft.course.holes.map(h=>`<div class="hole-mini"><b>H${h.hole}</b><div class="labels"><span>Par</span><span>SI</span><span>m</span></div><div class="mini-fields"><input data-hole-par="${h.hole}" type="number" min="3" max="6" value="${h.par??''}" placeholder="—" title="Par"><input data-hole-si="${h.hole}" type="number" min="1" max="18" value="${h.si??''}" placeholder="—" title="Stroke Index"><input data-hole-dist="${h.hole}" type="number" min="0" max="800" value="${h.distance??''}" placeholder="—" title="Distance metres"></div></div>`).join('')}</div>
+  </section>
+  <button class="btn wide" style="margin-top:10px" data-action="wizard-next">Choose Players →</button>`;
 }
-
 function stepPlayers(){
   const emptyHint = db.players.length===0 ? `<div class="empty" style="margin-bottom:10px"><b>No golfers saved yet.</b><br>Create your own golfer profiles to start this flight.</div>` : '';
   draft.playerTees=draft.playerTees||{};
   draft.playerIds.forEach(id=>{ if(!draft.playerTees[id]) draft.playerTees[id]=preferredTeeForPlayer(player(id)); });
   return `<h2>Who is in the flight?</h2><p>Add 2–6 golfers. Each golfer can play from a different tee box; RoundKaki remembers their preferred tee.</p>
-  <section class="card" style="margin-top:14px">${emptyHint}<div class="player-cols"><span>Golfer</span><span>HCP</span><span>Tee</span><span></span></div><div id="draftPlayers">${draft.playerIds.map((id,i)=>{const p=player(id);const tee=draft.playerTees[id]||preferredTeeForPlayer(p);return `<div class="player-line"><select class="select" data-draft-player="${i}">${db.players.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${esc(x.name)}</option>`).join('')}</select><input class="input" data-edit-hcp="${id}" type="number" step="0.1" value="${p?.handicap??18}" title="Handicap"><select class="select" data-player-tee="${id}" title="Player tee">${teeOptions(tee)}</select><button class="xbtn" data-remove-draft="${i}">×</button></div>`}).join('')}</div><button class="btn outline wide" data-action="add-draft-player">+ Add Player</button><div class="divider"></div><button class="btn soft wide" data-action="quick-new-player">Create New Golfer</button></section>
+  <section class="card" style="margin-top:14px">${emptyHint}<div class="player-cols"><span>Golfer</span><span>HCP</span><span>Tee</span><span></span></div><div id="draftPlayers">${draft.playerIds.map((id,i)=>{const p=player(id);const tee=draft.playerTees[id]||preferredTeeForPlayer(p);return `<div class="player-line"><select class="select" data-draft-player="${i}">${db.players.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${esc(x.name)}</option>`).join('')}</select><input class="input" data-edit-hcp="${id}" type="number" step="0.1" value="${p?.handicap??18}" title="Handicap"><select class="select" data-player-tee="${id}" title="Player tee">${STANDARD_TEES.map(t=>`<option value="${t}" ${normalizeTeeColor(tee)===t?'selected':''}>${teeEmoji(t)} ${t}</option>`).join('')}</select><button class="xbtn" data-remove-draft="${i}">×</button></div>`}).join('')}</div><button class="btn outline wide" data-action="add-draft-player">+ Add Player</button><div class="divider"></div><button class="btn soft wide" data-action="quick-new-player">Create New Golfer</button></section>
   <div class="notice greenish"><b>Individual tee boxes</b><br>Red, White, Blue and Black are set per golfer. RoundKaki uses that golfer’s tee-specific Par / SI / distance when the selected course data provides it. If tee-specific data is unavailable, the verified course scorecard is used as fallback.</div>
   <button class="btn wide" style="margin-top:10px" data-action="wizard-next">Set Kaki Strokes →</button>`;
 }
@@ -836,7 +862,7 @@ function roundSummaryOverlay(){
 
 function playersView(){
   const savedPairs=Object.entries(db.pairStrokes);
-  return `<main class="shell">${header(true,'Players')}<section class="card"><div class="row between"><div><b>Golfer profiles</b><div class="tiny muted">Official HCP + recurring Kaki history</div></div><button class="btn small" data-action="quick-new-player">+ Add</button></div><div style="margin-top:10px">${db.players.map(p=>`<div class="history-item"><div class="history-icon">🏌️</div><div class="main"><b>${esc(p.name)}</b><span>Handicap ${p.handicap} · ${esc(preferredTeeForPlayer(p))} tee</span></div><button class="btn small outline" data-edit-player="${p.id}">Edit</button></div>`).join('')}</div></section>
+  return `<main class="shell">${header(true,'Players')}<section class="card"><div class="row between"><div><b>Golfer profiles</b><div class="tiny muted">Official HCP + recurring Kaki history</div></div><button class="btn small" data-action="quick-new-player">+ Add</button></div><div style="margin-top:10px">${db.players.map(p=>`<div class="history-item"><div class="history-icon">🏌️</div><div class="main"><b>${esc(p.name)}</b><span>Handicap ${p.handicap} · ${teeEmoji(preferredTeeForPlayer(p))} ${esc(preferredTeeForPlayer(p))} tee</span></div><button class="btn small outline" data-edit-player="${p.id}">Edit</button></div>`).join('')}</div></section>
   <div class="section-title"><h3>Remembered Kaki strokes</h3><span>${savedPairs.length} pair${savedPairs.length===1?'':'s'}</span></div><section class="card">${savedPairs.length?savedPairs.map(([k,s])=>{const [a,b]=k.split('|'),pa=player(a),pb=player(b),rec=player(s.receiverId);const giver=s.receiverId===a?pb:pa;return `<div class="history-item"><div class="history-icon">↔</div><div class="main"><b>${esc(giver?.name)} → ${esc(rec?.name)}: ${s.strokes} strokes</b><span>Updated ${s.updatedAt?fmtDate(s.updatedAt):'from game setup'}</span></div></div>`}).join(''):'<div class="empty">No saved pair history yet. Finish a round to start building it.</div>'}</section></main>`;
 }
 
@@ -891,7 +917,7 @@ function bind(){
   document.querySelectorAll('[data-player-tee]').forEach(el=>el.onchange=()=>{const id=el.dataset.playerTee;draft.playerTees=draft.playerTees||{};draft.playerTees[id]=normalizeTeeColor(el.value);const p=player(id);if(p){p.preferredTee=normalizeTeeColor(el.value);saveDB();}render();});
   document.querySelectorAll('[data-remove-draft]').forEach(el=>el.onclick=()=>{if(draft.playerIds.length<=2)return toast('Keep at least 2 players.');draft.playerIds.splice(Number(el.dataset.removeDraft),1);initPairStrokes(draft);render();});
   document.querySelectorAll('[data-team]').forEach(el=>el.onchange=()=>{draft.teamAssignments[el.dataset.team]=el.value;});
-  document.querySelectorAll('[data-edit-player]').forEach(el=>el.onclick=()=>editPlayer(el.dataset.editPlayer));
+  document.querySelectorAll('[data-edit-player]').forEach(el=>el.onclick=()=>openPlayerEditor(el.dataset.editPlayer,false));
   document.querySelectorAll('[data-hole-par]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holePar)-1].par=Number(el.value)});
   document.querySelectorAll('[data-hole-si]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holeSi)-1].si=Number(el.value)});
   document.querySelectorAll('[data-hole-dist]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holeDist)-1].distance=el.value===''?null:Number(el.value)});
@@ -919,8 +945,10 @@ function action(a,el){
   else if(a==='reset-data') resetData();
   else if(a==='wizard-back'){ if(wizardStep>1){wizardStep--;render();} else {view='home';render();} }
   else if(a==='wizard-next') nextWizard();
-  else if(a==='add-draft-player'){ if(draft.playerIds.length>=6)return toast('MVP supports up to 6 golfers.'); const unused=db.players.find(p=>!draft.playerIds.includes(p.id)); if(unused){draft.playerIds.push(unused.id);draft.playerTees=draft.playerTees||{};draft.playerTees[unused.id]=preferredTeeForPlayer(unused);initPairStrokes(draft);render();} else addPlayerPrompt(); }
-  else if(a==='quick-new-player') addPlayerPrompt();
+  else if(a==='add-draft-player'){ if(draft.playerIds.length>=6)return toast('MVP supports up to 6 golfers.'); const unused=db.players.find(p=>!draft.playerIds.includes(p.id)); if(unused){draft.playerIds.push(unused.id);draft.playerTees=draft.playerTees||{};draft.playerTees[unused.id]=preferredTeeForPlayer(unused);initPairStrokes(draft);render();} else openPlayerEditor(null,true); }
+  else if(a==='quick-new-player') openPlayerEditor(null,view==='wizard');
+  else if(a==='cancel-player-editor'){playerEditor=null;render();}
+  else if(a==='save-player-profile') savePlayerProfile();
   else if(a==='toggle-course-holes'){document.getElementById('courseHoles')?.classList.toggle('hidden');}
   else if(a==='find-course-near-me') findNearbyCourses();
   else if(a==='refresh-web-scorecard') refreshScorecardFromWeb(null,false);
@@ -964,19 +992,8 @@ function nextHole(){
   if(r.currentHole===18)finishRound();else{r.currentHole++;saveDB();render();}
 }
 
-function addPlayerPrompt(){
-  const name=prompt('Golfer name'); if(!name)return;
-  const h=Number(prompt('Official handicap','18'));
-  const tee=normalizeTeeColor(prompt('Preferred tee: Red / White / Blue / Black','White')||'White');
-  const p={id:uid('p'),name:name.trim(),handicap:Number.isFinite(h)?h:18,preferredTee:tee};db.players.push(p);saveDB();
-  if(view==='wizard'&&draft){draft.playerIds.push(p.id);draft.playerTees=draft.playerTees||{};draft.playerTees[p.id]=tee;initPairStrokes(draft);} render();
-}
-function editPlayer(id){
-  const p=player(id);if(!p)return;const name=prompt('Golfer name',p.name);if(!name)return;
-  const h=Number(prompt('Official handicap',String(p.handicap)));
-  const tee=normalizeTeeColor(prompt('Preferred tee: Red / White / Blue / Black',preferredTeeForPlayer(p))||preferredTeeForPlayer(p));
-  p.name=name.trim();if(Number.isFinite(h))p.handicap=h;p.preferredTee=tee;saveDB();render();
-}
+function addPlayerPrompt(){openPlayerEditor(null,view==='wizard');}
+function editPlayer(id){openPlayerEditor(id,false);}
 
 window.roundkaki={reset(){localStorage.removeItem(DB_KEY);db=defaultDB();view='home';render();},exportData(){return clone(db);},engine:{strokesOnHole,pairResult,baccaratLedger,pairMatchStatus,parseDistanceMeters,expandHoleElement,apiTeeOptions,openGolfTeeOptions,fetchOpenGolfCoursePackEntry}};
 render();
