@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a3d2a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+<title>RoundKaki – Golf Games & Scoring</title>
+<style>
+:root{
+  --bg:#f3f6f2;--card:#fff;--ink:#132019;--muted:#6f7c74;--line:#dce5de;
+  --green:#0a3d2a;--green2:#12613f;--lime:#c8f169;--soft:#eaf4ed;--gold:#f1c453;
+  --red:#b83b48;--blue:#2d6cdf;--shadow:0 10px 32px rgba(10,61,42,.09);
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}.shell{max-width:720px;min-height:100vh;margin:0 auto;padding:16px 14px 96px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.brand{display:flex;align-items:center;gap:10px}.mark{width:44px;height:44px;border-radius:14px;background:var(--green);color:white;display:grid;place-items:center;font-size:21px;font-weight:950;box-shadow:var(--shadow)}
+.brand h1{font-size:21px;margin:0;letter-spacing:-.4px}.brand small{color:var(--muted);font-weight:650}.icon-btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 11px;color:var(--green);font-weight:850}
+.hero{background:linear-gradient(135deg,#0a3d2a,#14734a);color:#fff;border-radius:24px;padding:21px;box-shadow:var(--shadow);position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;right:-45px;top:-55px;background:rgba(200,241,105,.16)}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;font-weight:900;opacity:.76}.hero h2{font-size:28px;line-height:1.05;margin:5px 0 8px;letter-spacing:-.8px}.hero p{margin:0;line-height:1.45;opacity:.88}.hero-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}
+.btn{border:0;border-radius:14px;padding:13px 15px;font-weight:900;background:var(--green);color:#fff}.btn.lime{background:var(--lime);color:#17341f}.btn.white{background:#fff;color:var(--green)}.btn.soft{background:var(--soft);color:var(--green)}.btn.outline{background:#fff;border:1px solid var(--line);color:var(--green)}.btn.danger{background:#fff0f1;color:var(--red);border:1px solid #f1ced2}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.small{padding:8px 10px;border-radius:10px;font-size:12px}.btn.wide{width:100%}
+.section-title{display:flex;justify-content:space-between;align-items:end;margin:22px 2px 10px}.section-title h3{margin:0;font-size:17px}.section-title span{font-size:12px;color:var(--muted)}.card{background:var(--card);border:1px solid var(--line);border-radius:19px;padding:15px;box-shadow:var(--shadow);margin-bottom:12px}
+.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.quick{padding:16px;text-align:left;border-radius:17px;border:1px solid var(--line);background:#fff}.quick b{display:block;margin-top:8px}.quick span{font-size:12px;color:var(--muted)}.quick .qicon{font-size:22px}.active-card{border-color:#bad2c2;background:linear-gradient(180deg,#fff,#f6fbf7)}
+.row{display:flex;gap:9px;align-items:center}.row.wrap{flex-wrap:wrap}.between{justify-content:space-between}.muted{color:var(--muted)}.tiny{font-size:11px}.smalltxt{font-size:12px}.strong{font-weight:900}.green{color:var(--green)}.red{color:var(--red)}.positive{color:var(--green)}.negative{color:var(--red)}
+.input,.select{width:100%;border:1px solid var(--line);background:#fff;border-radius:13px;padding:11px 12px;color:var(--ink);outline:none}.input:focus,.select:focus{border-color:#78a98b;box-shadow:0 0 0 3px rgba(18,97,63,.09)}label.field{display:block;margin-bottom:12px}label.field>span{display:block;font-size:12px;font-weight:800;margin:0 0 6px;color:#536058}
+.stepper{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:white}.stepper button{width:40px;height:42px;border:0;background:#f7faf7;font-weight:950;color:var(--green);font-size:18px}.stepper input{width:58px;height:42px;text-align:center;border:0;font-weight:900;outline:0;background:#fff}.player-line{display:grid;grid-template-columns:1fr 90px 38px;gap:8px;margin-bottom:8px;align-items:center}.xbtn{width:38px;height:38px;border:0;border-radius:11px;background:#fff0f1;color:var(--red);font-weight:950}
+.pills{display:flex;gap:7px;overflow:auto;padding:1px 0 3px}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;white-space:nowrap;font-size:12px;font-weight:850;color:#65716a}.pill.active{background:var(--green);border-color:var(--green);color:#fff}.pill.lime.active{background:var(--lime);border-color:var(--lime);color:#183421}
+.progressbar{height:6px;background:#e2e8e3;border-radius:99px;overflow:hidden;margin:12px 0 18px}.progressbar i{display:block;height:100%;background:var(--green);border-radius:99px}.wizard-head{margin:2px 1px 14px}.wizard-head .back{border:0;background:transparent;color:var(--green);font-weight:900;padding:0 0 10px}.wizard-head h2{margin:0 0 3px;font-size:23px}.wizard-head p{margin:0;color:var(--muted);font-size:13px}
+.course-holes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.hole-mini{border:1px solid var(--line);border-radius:12px;padding:8px}.hole-mini b{font-size:12px}.hole-mini .mini-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}.hole-mini input{width:100%;padding:6px 3px;border:1px solid var(--line);border-radius:8px;text-align:center;font-size:11px}.hole-mini .labels{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:5px;color:var(--muted);font-size:8px;text-align:center;text-transform:uppercase;font-weight:850}.geo-card{border:1px solid #cfe3d5;background:#f2fbf5;border-radius:15px;padding:11px;margin-top:9px}.course-result{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--line);background:#fff;border-radius:13px;padding:11px;text-align:left;margin-top:7px}.course-result .pin{width:36px;height:36px;border-radius:12px;background:var(--soft);display:grid;place-items:center}.course-result .meta{flex:1}.course-result .meta b{display:block;font-size:13px}.course-result .meta span{font-size:10px;color:var(--muted)}.source-note{font-size:9px;color:var(--muted);line-height:1.35;margin-top:7px}.gps-helper{display:flex;justify-content:space-between;align-items:center;gap:9px;border:1px solid #cfe3d5;background:#f2fbf5;border-radius:14px;padding:10px;margin:8px 0 0}.gps-helper b{font-size:11px}.gps-helper span{font-size:9px;color:var(--muted)}
+.stroke-matrix{overflow:auto}.stroke-table{width:100%;border-collapse:separate;border-spacing:0 7px;min-width:520px}.stroke-table th{font-size:11px;color:var(--muted);text-align:left;padding:0 8px}.stroke-table td{background:#fbfcfb;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 8px;font-size:12px}.stroke-table td:first-child{border-left:1px solid var(--line);border-radius:11px 0 0 11px}.stroke-table td:last-child{border-right:1px solid var(--line);border-radius:0 11px 11px 0}.stroke-num{width:64px;padding:7px;text-align:center;border:1px solid var(--line);border-radius:9px;font-weight:900}
+.game-option{display:flex;gap:12px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:15px;margin-bottom:8px;background:#fff}.game-option.selected{border-color:#8bb49b;background:#f3faf5}.game-option .ico{font-size:24px;width:32px}.game-option .meta{flex:1}.game-option b{display:block}.game-option span{font-size:12px;color:var(--muted)}.check{width:24px;height:24px;border-radius:8px;border:2px solid #b7c4bb;display:grid;place-items:center;font-size:14px}.selected .check{background:var(--green);border-color:var(--green);color:#fff}
+.notice{border-radius:14px;padding:11px 12px;background:#fff8e7;border:1px solid #f1dfaa;color:#6c541c;font-size:12px;line-height:1.45}.notice.greenish{background:#eef8f1;border-color:#cce5d3;color:#2d603d}.notice.redish{background:#fff1f2;border-color:#f2d2d6;color:#88333d}
+.round-top{position:sticky;top:0;z-index:8;background:rgba(243,246,242,.94);backdrop-filter:blur(12px);padding:5px 0 10px}.hole-header{background:var(--green);color:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between}.hole-header h2{margin:2px 0 0;font-size:26px}.hole-header .navhole{display:flex;gap:6px}.navhole button{width:37px;height:37px;border-radius:11px;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:18px}.status-chip{background:rgba(255,255,255,.14);padding:7px 9px;border-radius:10px;font-size:11px;font-weight:850}
+.declare-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.declare{border:1px solid var(--line);border-radius:15px;padding:11px;background:#fff}.declare .name{font-weight:900;margin-bottom:8px}.seg{display:grid;grid-template-columns:1fr 1fr;background:#edf1ee;border-radius:11px;padding:3px}.seg button{border:0;border-radius:9px;padding:8px 5px;background:transparent;font-size:11px;font-weight:900;color:#718078}.seg button.active.single{background:#fff;color:var(--green);box-shadow:0 2px 7px rgba(0,0,0,.06)}.seg button.active.up{background:#ffefe1;color:#a55013;box-shadow:0 2px 7px rgba(0,0,0,.06)}.declare.locked{background:#f7f9f7}.declare.locked .seg{opacity:.75}
+.score-list{display:grid;gap:8px}.score-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:15px;padding:11px;background:#fff}.score-row .subline{font-size:11px;color:var(--muted);margin-top:2px}.score-row .upbadge{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:7px;background:#ffefe1;color:#a55013;font-size:10px;font-weight:950}.score-step{display:grid;grid-template-columns:36px 42px 36px;align-items:center}.score-step button{height:36px;border:0;background:#eef4ef;color:var(--green);font-size:19px;font-weight:950}.score-step button:first-child{border-radius:10px 0 0 10px}.score-step button:last-child{border-radius:0 10px 10px 0}.score-step strong{text-align:center;font-size:18px}.putts{display:flex;align-items:center;gap:5px;margin-top:6px;font-size:11px}.putts input{width:42px;padding:4px;border:1px solid var(--line);border-radius:7px;text-align:center}
+.pair-list{display:grid;gap:7px}.pair{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:9px 10px;background:#fff}.pair.square{background:#fafbfa}.pair .pairname{font-size:12px;font-weight:850}.pair .detail{font-size:10px;color:var(--muted);margin-top:2px}.pair .pts{font-weight:950;color:var(--green);font-size:12px}.pair.square .pts{color:#89948e}
+.ledger{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.ledger-item{border:1px solid var(--line);border-radius:14px;padding:11px;background:#fff}.ledger-item .n{font-size:12px;color:var(--muted)}.ledger-item .v{font-size:23px;font-weight:950;margin-top:2px}.ledger-item.lead{border-color:#b9d4c2;background:#f3faf5}.ledger-item.tail{border-color:#efcbd0;background:#fff6f7}.ledger-item .u{font-size:10px;color:var(--muted)}
+.bottom-actions{position:fixed;z-index:10;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px max(14px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}.bottom-actions .inner{max-width:692px;margin:auto;display:grid;grid-template-columns:1fr 1.5fr;gap:8px}
+.tabs{display:flex;gap:7px;overflow:auto}.tab{border:1px solid var(--line);border-radius:999px;background:#fff;padding:8px 10px;font-size:11px;font-weight:900;color:var(--muted);white-space:nowrap}.tab.active{background:var(--green);border-color:var(--green);color:#fff}
+.history-item{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}.history-item:last-child{border-bottom:0}.history-icon{width:42px;height:42px;border-radius:13px;background:var(--soft);display:grid;place-items:center}.history-item .main{flex:1}.history-item b{display:block}.history-item span{font-size:11px;color:var(--muted)}
+.result-hero{text-align:center;padding:24px 14px}.result-hero .trophy{font-size:44px}.result-hero h2{font-size:25px;margin:6px 0}.rank{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.rank:last-child{border-bottom:0}.rank .place{width:28px;color:var(--muted);font-weight:900}.rank .who{flex:1;font-weight:850}.rank .bal{font-weight:950;font-size:17px}.adjust{display:grid;grid-template-columns:1fr auto;gap:8px;border:1px solid var(--line);border-radius:13px;padding:10px;margin-top:7px}.adjust b{font-size:12px}.adjust span{font-size:11px;color:var(--muted)}.delta{font-weight:950;color:var(--green)}
+.empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}.divider{height:1px;background:var(--line);margin:13px 0}.hidden{display:none!important}.footer-note{text-align:center;color:var(--muted);font-size:10px;margin:18px 0}.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:50;background:#14271c;color:#fff;border-radius:12px;padding:10px 13px;font-size:12px;font-weight:800;box-shadow:var(--shadow);animation:fade 2.4s both}@keyframes fade{0%{opacity:0;transform:translate(-50%,8px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+@media(min-width:640px){.quick-grid{grid-template-columns:repeat(4,1fr)}.declare-grid{grid-template-columns:repeat(4,1fr)}.ledger{grid-template-columns:repeat(4,1fr)}.course-holes{grid-template-columns:repeat(6,1fr)}}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+'use strict';
+
+const DB_KEY = 'roundkaki-db-v4';
+const LEGACY_KEYS = ['roundkaki-db-v3','roundkaki-db-v2','golfkaki-db-v2'];
+const uid = (p='id') => `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const todayISO = () => new Date().toISOString();
+const fmtDate = iso => new Date(iso).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}) : ''; 
+
+const demoPlayers = [
+  {id:'p_nav', name:'Navin', handicap:12},
+  {id:'p_vij', name:'Vijay', handicap:16},
+  {id:'p_rav', name:'Ravi', handicap:20},
+  {id:'p_kum', name:'Kumar', handicap:24}
+];
+
+function defaultDB(){
+  return {version:5, players:clone(demoPlayers), pairStrokes:{}, history:[], activeRound:null, presets:[], courseCache:[], settings:{}};
+}
+function loadDB(){
+  const normalize = x => {
+    if(!x || typeof x!=='object') return null;
+    x.version=5;
+    x.players=Array.isArray(x.players)?x.players:clone(demoPlayers);
+    x.pairStrokes=x.pairStrokes||{}; x.history=Array.isArray(x.history)?x.history:[];
+    x.presets=Array.isArray(x.presets)?x.presets:[]; x.courseCache=Array.isArray(x.courseCache)?x.courseCache:[]; x.settings=x.settings||{};
+    return x;
+  };
+  try{
+    const current=localStorage.getItem(DB_KEY);
+    if(current) return normalize(JSON.parse(current)) || defaultDB();
+    for(const key of LEGACY_KEYS){
+      const raw=localStorage.getItem(key);
+      if(raw){ const migrated=normalize(JSON.parse(raw)); if(migrated){ localStorage.setItem(DB_KEY,JSON.stringify(migrated)); return migrated; } }
+    }
+    return defaultDB();
+  }catch{return defaultDB();}
+}
+let db = loadDB();
+let view = 'home';
+let wizardStep = 1;
+let draft = null;
+let historyOpenId = null;
+let courseSearchState = {status:'idle',results:[],message:''};
+let gpsHoleState = null;
+let deferredInstallPrompt = null;
+const isIOSDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
+function isInstalledApp(){ return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredInstallPrompt=e; if(view==='home')render(); });
+window.addEventListener('appinstalled',()=>{ deferredInstallPrompt=null; if(view==='home')render(); setTimeout(()=>toast('RoundKaki installed on this device.'),150); });
+async function installRoundKaki(){
+  if(isInstalledApp()) return toast('RoundKaki is already installed.');
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    const choice=await deferredInstallPrompt.userChoice.catch(()=>null);
+    if(choice?.outcome==='accepted') deferredInstallPrompt=null;
+    return;
+  }
+  if(isIOSDevice) return toast('On iPhone: Safari → Share → Add to Home Screen → Open as Web App.');
+  toast('Use your browser menu and choose Install app / Add to Home screen.');
+}
+
+function saveDB(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function toast(msg){ const n=document.createElement('div'); n.className='toast'; n.textContent=msg; document.body.appendChild(n); setTimeout(()=>n.remove(),2500); }
+function pairKey(a,b){ return [a,b].sort().join('|'); }
+function player(id){ return db.players.find(p=>p.id===id); }
+function roundPlayer(r,id){ return r.players.find(p=>p.id===id); }
+function pctRound(v){ return Math.round(v); }
+function clamp(n,min,max){ return Math.max(min,Math.min(max,n)); }
+function moneyRef(r,points){ return ''; }
+function baccaratLabel(mult){ return mult===8?'HIO':mult===4?'Eagle':mult===2?'Birdie':'Base'; }
+
+function defaultCourse(){
+  return {
+    name:'Demo Golf Club', tee:'White', latitude:null, longitude:null, provider:'manual', osm:null, availableTees:[],
+    holes:Array.from({length:18},(_,i)=>({hole:i+1, par:[4,4,3,5,4,4,3,5,4,4,4,3,5,4,4,3,5,4][i], si:i+1, distance:null, teeLat:null, teeLon:null, pinLat:null, pinLon:null, centerLat:null, centerLon:null, osmTags:null}))
+  };
+}
+
+function haversineM(lat1,lon1,lat2,lon2){
+  const r=6371000,toRad=x=>x*Math.PI/180;
+  const dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return 2*r*Math.asin(Math.sqrt(a));
+}
+function parseDistanceMeters(v){
+  if(v==null||v==='')return null; const s=String(v).trim().toLowerCase();
+  const n=parseFloat(s.replace(',','.')); if(!Number.isFinite(n))return null;
+  if(/yd|yard/.test(s))return Math.round(n*0.9144); if(/km/.test(s))return Math.round(n*1000); return Math.round(n);
+}
+function teeKey(s){return String(s||'').trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'_');}
+function tagValue(tags,key,tee){
+  const t=teeKey(tee); return tags?.[`${key}:${t}`] ?? tags?.[key] ?? null;
+}
+function applyTeeToCourse(course,tee){
+  course.tee=tee||course.tee||'White';
+  course.holes.forEach(h=>{
+    const tags=h.osmTags; if(!tags)return;
+    const p=Number(tagValue(tags,'par',course.tee)); if(Number.isFinite(p)&&p>=3&&p<=6)h.par=p;
+    const si=Number(tagValue(tags,'handicap',course.tee)); if(Number.isFinite(si)&&si>=1&&si<=18)h.si=si;
+    const d=parseDistanceMeters(tagValue(tags,'dist',course.tee) ?? tagValue(tags,'distance',course.tee)); if(d)h.distance=d;
+  });
+}
+function currentPosition(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation)return reject(new Error('GPS is not available in this browser.'));
+    navigator.geolocation.getCurrentPosition(resolve,e=>reject(new Error(e.message||'Location permission was not granted.')),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+  });
+}
+async function overpass(query){
+  const res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)});
+  if(!res.ok)throw new Error(`OpenStreetMap lookup failed (${res.status}).`); return res.json();
+}
+function osmCenter(el){
+  if(Number.isFinite(el.lat)&&Number.isFinite(el.lon))return {lat:el.lat,lon:el.lon};
+  if(el.center&&Number.isFinite(el.center.lat)&&Number.isFinite(el.center.lon))return {lat:el.center.lat,lon:el.center.lon};
+  if(Array.isArray(el.geometry)&&el.geometry.length){const g=el.geometry[Math.floor(el.geometry.length/2)];return {lat:g.lat,lon:g.lon};}
+  return null;
+}
+async function findNearbyCourses(){
+  courseSearchState={status:'locating',results:[],message:'Requesting your phone location…'}; render();
+  try{
+    const pos=await currentPosition(),lat=pos.coords.latitude,lon=pos.coords.longitude;
+    courseSearchState={status:'loading',results:[],message:'Looking for golf courses nearby…',lat,lon}; render();
+    const q=`[out:json][timeout:20];(node["leisure"="golf_course"](around:25000,${lat},${lon});way["leisure"="golf_course"](around:25000,${lat},${lon});relation["leisure"="golf_course"](around:25000,${lat},${lon}););out tags center 30;`;
+    const data=await overpass(q);
+    const rows=(data.elements||[]).map(el=>{const c=osmCenter(el);if(!c)return null;return {osmType:el.type,osmId:el.id,name:el.tags?.name||el.tags?.['name:en']||'Golf Course',latitude:c.lat,longitude:c.lon,distanceKm:haversineM(lat,lon,c.lat,c.lon)/1000,tags:el.tags||{}}}).filter(Boolean).sort((a,b)=>a.distanceKm-b.distanceKm).slice(0,12);
+    courseSearchState={status:'results',results:rows,message:rows.length?'Select your course.':'No mapped golf course found within 25 km.',lat,lon}; render();
+  }catch(e){courseSearchState={status:'error',results:[],message:e.message||'Unable to use GPS.'};render();}
+}
+function courseCacheKey(c){return c?.osmType&&c?.osmId?`${c.osmType}/${c.osmId}`:`name/${String(c?.name||'').toLowerCase()}`;}
+function saveCourseCache(course){
+  const key=courseCacheKey(course),copy=clone(course); const idx=db.courseCache.findIndex(c=>courseCacheKey(c)===key);
+  if(idx>=0)db.courseCache[idx]=copy;else db.courseCache.unshift(copy); db.courseCache=db.courseCache.slice(0,30);saveDB();
+}
+function collectTees(elements){
+  const out=new Set(); (elements||[]).forEach(el=>Object.keys(el.tags||{}).forEach(k=>{const m=k.match(/^(?:par|handicap|dist):([^:]+)$/);if(m)out.add(m[1]);})); return [...out].sort();
+}
+function expandHoleElement(el){
+  const tags=el.tags||{}, refs=String(tags.ref||'').split(';').map(x=>parseInt(x,10)).filter(n=>n>=1&&n<=18); if(!refs.length)return [];
+  const split=(v)=>String(v??'').split(';'); const pars=split(tags.par),sis=split(tags.handicap),dists=split(tags.dist??tags.distance);
+  const geom=Array.isArray(el.geometry)?el.geometry:[],tee=geom[0]||null,pin=geom.length?geom[geom.length-1]:null,c=osmCenter(el);
+  return refs.map((n,i)=>({hole:n,par:Number(pars[i]??pars[0])||null,si:Number(sis[i]??sis[0])||null,distance:parseDistanceMeters(dists[i]??dists[0]),teeLat:tee?.lat??null,teeLon:tee?.lon??null,pinLat:pin?.lat??null,pinLon:pin?.lon??null,centerLat:c?.lat??null,centerLon:c?.lon??null,osmTags:clone(tags)}));
+}
+async function loadOSMCourse(row){
+  const cached=db.courseCache.find(c=>courseCacheKey(c)===`${row.osmType}/${row.osmId}`);
+  if(cached&&cached.holes?.some(h=>h.osmTags)){draft.course=clone(cached);courseSearchState={...courseSearchState,status:'selected',message:`Loaded saved details for ${cached.name}.`};render();return;}
+  courseSearchState={...courseSearchState,status:'loading-holes',message:`Loading mapped hole details for ${row.name}…`}; render();
+  const q=`[out:json][timeout:25];way["golf"="hole"](around:3500,${row.latitude},${row.longitude});out tags center geom;`;
+  try{
+    const data=await overpass(q),tees=collectTees(data.elements||[]),mapped=(data.elements||[]).flatMap(expandHoleElement);
+    const base=defaultCourse(); base.name=row.name;base.latitude=row.latitude;base.longitude=row.longitude;base.provider='OpenStreetMap';base.osm={type:row.osmType,id:row.osmId};base.availableTees=tees;
+    const byNo=new Map(); mapped.forEach(h=>{if(!byNo.has(h.hole))byNo.set(h.hole,h);});
+    base.holes=base.holes.map(h=>({...h,...(byNo.get(h.hole)||{})}));
+    if(tees.length&&tees.includes('white'))base.tee='white'; else if(tees.length)base.tee=tees[0];
+    applyTeeToCourse(base,base.tee); draft.course=base; saveCourseCache(base);
+    const count=base.holes.filter(h=>h.osmTags).length;courseSearchState={...courseSearchState,status:'selected',message:`${row.name}: ${count}/18 mapped holes loaded. Review Par / SI before starting.`};render();
+  }catch(e){
+    draft.course={...defaultCourse(),name:row.name,latitude:row.latitude,longitude:row.longitude,provider:'OpenStreetMap',osm:{type:row.osmType,id:row.osmId}};
+    courseSearchState={...courseSearchState,status:'selected',message:`Course found, but hole details could not be loaded. You can enter Par / SI manually.`};render();
+  }
+}
+async function gpsSuggestHole(){
+  const r=db.activeRound;if(!r)return; gpsHoleState={status:'loading',message:'Checking your GPS…'};render();
+  try{
+    const pos=await currentPosition(),lat=pos.coords.latitude,lon=pos.coords.longitude;
+    const mapped=r.course.holes.filter(h=>Number.isFinite(h.centerLat)&&Number.isFinite(h.centerLon));
+    if(!mapped.length)throw new Error('This course has no mapped hole coordinates yet.');
+    const nearest=[...mapped].sort((a,b)=>haversineM(lat,lon,a.centerLat,a.centerLon)-haversineM(lat,lon,b.centerLat,b.centerLon))[0];
+    const toPin=(Number.isFinite(nearest.pinLat)&&Number.isFinite(nearest.pinLon))?haversineM(lat,lon,nearest.pinLat,nearest.pinLon):null;
+    r.currentHole=nearest.hole;saveDB();gpsHoleState={status:'ok',hole:nearest.hole,distanceToPin:toPin,accuracy:pos.coords.accuracy,message:`GPS suggests Hole ${nearest.hole}${toPin!=null?` · about ${Math.round(toPin)} m to mapped pin`:''}.`};render();
+  }catch(e){gpsHoleState={status:'error',message:e.message||'Unable to locate hole.'};render();}
+}
+
+function newDraft(){
+  return {
+    course:defaultCourse(),
+    playerIds:db.players.slice(0,4).map(p=>p.id),
+    allowance:70,
+    useKakiHistory:true,
+    autoUpdateKaki:true,
+    kakiRule:{threshold:2,maxDrift:99},
+    pairStrokes:{},
+    games:{baccarat:true,match:true,skins:false,snake:false,team:false},
+    teamAssignments:{},
+    baccarat:{basePoints:1,birdieMultiplier:2,eagleMultiplier:4,holeInOneMultiplier:8,multiplierBasis:'adjusted'},
+    skins:{baseSkin:1,carry:true},
+    createdAt:todayISO()
+  };
+}
+
+function initPairStrokes(d){
+  const ids=d.playerIds;
+  const next={};
+  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
+    const a=player(ids[i]), b=player(ids[j]); if(!a||!b) continue;
+    const low = a.handicap<=b.handicap ? a : b;
+    const high = a.handicap<=b.handicap ? b : a;
+    const calc=pctRound(Math.max(0,high.handicap-low.handicap)*(d.allowance/100));
+    const saved=db.pairStrokes[pairKey(a.id,b.id)];
+    next[pairKey(a.id,b.id)]={
+      aId:a.id,bId:b.id,lowId:low.id,receiverId:high.id,
+      calculated:calc,
+      saved:saved?.strokes ?? null,
+      strokes:(d.useKakiHistory && saved?.strokes!=null) ? saved.strokes : calc,
+      source:(d.useKakiHistory && saved?.strokes!=null)?'kaki':'calculated'
+    };
+  }
+  d.pairStrokes=next;
+}
+
+function startNewGame(){ draft=newDraft(); initPairStrokes(draft); courseSearchState={status:'idle',results:[],message:''}; gpsHoleState=null; wizardStep=1; view='wizard'; render(); }
+function repeatLastSetup(){
+  const r=db.history[0]; if(!r)return startNewGame();
+  draft={course:clone(r.course),playerIds:r.players.map(p=>p.id).filter(id=>player(id)),allowance:r.allowance??70,useKakiHistory:true,autoUpdateKaki:r.autoUpdateKaki!==false,kakiRule:clone(r.kakiRule||{threshold:2,maxDrift:99}),pairStrokes:{},games:clone(r.games),teamAssignments:clone(r.teamAssignments||{}),baccarat:clone(r.baccarat||newDraft().baccarat),skins:clone(r.skins||newDraft().skins),createdAt:todayISO()};
+  initPairStrokes(draft); wizardStep=5; view='wizard'; render();
+}
+
+function makeRound(){
+  const selected=draft.playerIds.map(id=>clone(player(id))).filter(Boolean);
+  const r={
+    id:uid('round'), status:'active', createdAt:todayISO(), currentHole:1,
+    course:clone(draft.course), players:selected,
+    allowance:draft.allowance, pairStrokes:clone(draft.pairStrokes),
+    games:clone(draft.games), teamAssignments:clone(draft.teamAssignments),
+    baccarat:clone(draft.baccarat), skins:clone(draft.skins), autoUpdateKaki:draft.autoUpdateKaki, kakiRule:clone(draft.kakiRule||{threshold:2,maxDrift:99}),
+    holes:Array.from({length:18},(_,i)=>({hole:i+1,locked:false,lockedAt:null,up:Object.fromEntries(selected.map(p=>[p.id,false])),scores:Object.fromEntries(selected.map(p=>[p.id,null])),putts:Object.fromEntries(selected.map(p=>[p.id,null]))}))
+  };
+  db.activeRound=r; saveDB(); view='round'; render();
+}
+
+function strokesOnHole(total, si){
+  const t=Math.max(0,Math.round(Number(total)||0));
+  const full=Math.floor(t/18), rem=t%18;
+  return full + (rem>0 && si<=rem ? 1:0);
+}
+
+function pairStrokeInfo(r,aId,bId,holeNo){
+  const rec=r.pairStrokes[pairKey(aId,bId)];
+  if(!rec) return {a:0,b:0,total:0,receiverId:null};
+  const si=r.course.holes[holeNo-1].si;
+  const n=strokesOnHole(rec.strokes,si);
+  return {a:rec.receiverId===aId?n:0,b:rec.receiverId===bId?n:0,total:rec.strokes,receiverId:rec.receiverId};
+}
+
+function scoreMultiplier(adjustedScore,grossScore,par,cfg){
+  // Baccarat house ladder: Par win x1, Birdie x2, Eagle x4, actual Hole-in-One x8.
+  // Handicap strokes are applied first, so Birdie/Eagle status uses the adjusted score.
+  // Hole-in-One is always an actual gross score of 1, not a net 1 created by a stroke.
+  if(grossScore===1) return 8;
+  if(adjustedScore<=par-2) return 4;
+  if(adjustedScore===par-1) return 2;
+  return 1;
+}
+
+function pairResult(r,hole,aId,bId){
+  const aScore=Number(hole.scores[aId]), bScore=Number(hole.scores[bId]);
+  if(!Number.isFinite(aScore)||!Number.isFinite(bScore)||aScore<=0||bScore<=0) return null;
+  const si=pairStrokeInfo(r,aId,bId,hole.hole);
+  const aAdj=aScore-si.a, bAdj=bScore-si.b;
+  if(aAdj===bAdj){ return {aId,bId,square:true,aGross:aScore,bGross:bScore,aStroke:si.a,bStroke:si.b,aAdj,bAdj,points:0}; }
+  const winnerId=aAdj<bAdj?aId:bId, loserId=winnerId===aId?bId:aId;
+  const winAdj=winnerId===aId?aAdj:bAdj, winGross=winnerId===aId?aScore:bScore;
+  const basis=r.baccarat.multiplierBasis==='gross'?winGross:winAdj;
+  const par=r.course.holes[hole.hole-1].par;
+  const sm=scoreMultiplier(basis,winGross,par,r.baccarat);
+  const wm=hole.up[winnerId]?2:1, lm=hole.up[loserId]?2:1;
+  const pts=r.baccarat.basePoints*wm*lm*sm;
+  return {aId,bId,square:false,winnerId,loserId,aGross:aScore,bGross:bScore,aStroke:si.a,bStroke:si.b,aAdj,bAdj,scoreMultiplier:sm,winnerUp:!!hole.up[winnerId],loserUp:!!hole.up[loserId],points:pts};
+}
+
+function holePairResults(r,hole){
+  const out=[]; for(let i=0;i<r.players.length;i++) for(let j=i+1;j<r.players.length;j++){
+    const x=pairResult(r,hole,r.players[i].id,r.players[j].id); if(x) out.push(x);
+  } return out;
+}
+
+function baccaratLedger(r){
+  const ledger=Object.fromEntries(r.players.map(p=>[p.id,0]));
+  if(!r.games.baccarat) return ledger;
+  r.holes.forEach(h=>{
+    if(!h.locked || !allScoresEntered(r,h)) return;
+    holePairResults(r,h).forEach(x=>{ if(!x.square){ ledger[x.winnerId]+=x.points; ledger[x.loserId]-=x.points; }});
+  });
+  return ledger;
+}
+
+function pairMatchStatus(r,aId,bId){
+  let a=0,b=0,played=0;
+  r.holes.forEach(h=>{
+    if(!h.locked || !allScoresEntered(r,h)) return;
+    const x=pairResult(r,h,aId,bId); if(!x) return; played++;
+    if(!x.square){ if(x.winnerId===aId)a++; else b++; }
+  });
+  return {aWins:a,bWins:b,played,margin:a-b};
+}
+
+function basePlayerId(r){ return [...r.players].sort((a,b)=>a.handicap-b.handicap)[0]?.id; }
+function netVsBase(r,h,pid){
+  const s=Number(h.scores[pid]); if(!Number.isFinite(s)||s<=0)return null;
+  const base=basePlayerId(r); if(pid===base)return s;
+  const x=pairStrokeInfo(r,pid,base,h.hole); return s-x.a;
+}
+function skinsState(r){
+  const wins=Object.fromEntries(r.players.map(p=>[p.id,0])); let carry=0;
+  if(!r.games.skins)return {wins,carry};
+  for(const h of r.holes){
+    if(!h.locked||!allScoresEntered(r,h))continue;
+    const ns=r.players.map(p=>({id:p.id,n:netVsBase(r,h,p.id)}));
+    const low=Math.min(...ns.map(x=>x.n)); const best=ns.filter(x=>x.n===low);
+    if(best.length===1){ wins[best[0].id]+=r.skins.baseSkin+carry; carry=0; }
+    else if(r.skins.carry) carry+=r.skins.baseSkin;
+  }
+  return {wins,carry};
+}
+function snakeState(r){
+  let snake=null,holeNo=null;
+  if(!r.games.snake)return {snake,holeNo};
+  r.holes.forEach(h=>{ if(!h.locked)return; r.players.forEach(p=>{if(Number(h.putts[p.id])>=3){snake=p.id;holeNo=h.hole;}}); });
+  return {snake,holeNo};
+}
+function teamState(r){
+  let a=0,b=0,played=0;
+  if(!r.games.team)return {a,b,played};
+  r.holes.forEach(h=>{
+    if(!h.locked||!allScoresEntered(r,h))return;
+    const ta=r.players.filter(p=>r.teamAssignments[p.id]==='A').map(p=>netVsBase(r,h,p.id)).filter(Number.isFinite);
+    const tb=r.players.filter(p=>r.teamAssignments[p.id]==='B').map(p=>netVsBase(r,h,p.id)).filter(Number.isFinite);
+    if(!ta.length||!tb.length)return; played++;
+    const na=Math.min(...ta), nb=Math.min(...tb); if(na<nb)a++; else if(nb<na)b++;
+  });
+  return {a,b,played};
+}
+function allScoresEntered(r,h){ return r.players.every(p=>Number(h.scores[p.id])>0); }
+
+function computeKakiAdjustments(r){
+  const list=[];
+  for(let i=0;i<r.players.length;i++) for(let j=i+1;j<r.players.length;j++){
+    const a=r.players[i],b=r.players[j], rec=r.pairStrokes[pairKey(a.id,b.id)]; if(!rec) continue;
+    const high=roundPlayer(r,rec.receiverId); const low=roundPlayer(r,rec.receiverId===a.id?b.id:a.id);
+    const st=pairMatchStatus(r,low.id,high.id); // positive => low won more holes
+    let next=rec.strokes, reason='No change';
+    const threshold=Math.max(1,Number(r.kakiRule?.threshold)||2);
+    const maxDrift=Math.max(0,Number(r.kakiRule?.maxDrift)??3);
+    const minAllowed=Math.max(0,rec.calculated-maxDrift), maxAllowed=rec.calculated+maxDrift;
+    if(st.margin>=threshold){ next=Math.min(maxAllowed,rec.strokes+1); reason=next===rec.strokes?`At Kaki cap (${maxAllowed})`:`${high.name} lost by ${st.margin} holes → +1 next game`; }
+    else if(st.margin<=-threshold){ next=Math.max(minAllowed,rec.strokes-1); reason=next===rec.strokes?`At Kaki floor (${minAllowed})`:`${high.name} won by ${Math.abs(st.margin)} holes → -1 next game`; }
+    list.push({key:pairKey(a.id,b.id),lowId:low.id,receiverId:high.id,current:rec.strokes,next,reason,margin:st.margin,calculated:rec.calculated});
+  }
+  return list;
+}
+
+function finishRound(){
+  const r=db.activeRound; if(!r)return;
+  const played=r.holes.filter(h=>h.locked&&allScoresEntered(r,h)).length;
+  if(played===0){ toast('Enter at least one completed hole first.'); return; }
+  const adjustments=computeKakiAdjustments(r);
+  if(r.autoUpdateKaki){
+    adjustments.forEach(a=>{
+      db.pairStrokes[a.key]={strokes:a.next,receiverId:a.receiverId,updatedAt:todayISO(),lastRoundId:r.id};
+    });
+  }
+  r.status='completed'; r.completedAt=todayISO(); r.kakiAdjustments=adjustments;
+  r.finalLedger=baccaratLedger(r); r.finalSkins=skinsState(r); r.finalSnake=snakeState(r); r.finalTeam=teamState(r);
+  db.history.unshift(clone(r)); db.activeRound=null; saveDB();
+  historyOpenId=r.id; view='summary'; render();
+}
+
+function render(){
+  const app=document.getElementById('app');
+  if(view==='home') app.innerHTML=homeView();
+  else if(view==='wizard') app.innerHTML=wizardView();
+  else if(view==='round') app.innerHTML=roundView();
+  else if(view==='players') app.innerHTML=playersView();
+  else if(view==='history') app.innerHTML=historyView();
+  else if(view==='summary') app.innerHTML=summaryView();
+  else if(view==='settings') app.innerHTML=settingsView();
+  bind();
+}
+
+function header(back=false,title='RoundKaki'){
+  return `<div class="top"><div class="brand"><div class="mark">RK</div><div><h1>${esc(title)}</h1><small>Your Round. Your Rules.</small></div></div>${back?'<button class="icon-btn" data-action="home">Home</button>':'<button class="icon-btn" data-action="players">Players</button>'}</div>`;
+}
+
+function homeView(){
+  const active=db.activeRound;
+  return `<main class="shell">${header(false)}
+  <section class="hero"><div class="eyebrow">Your golf group, remembered</div><h2>One score.<br>Every game.</h2><p>Kaki strokes, UP declarations, Baccarat Golf points, partners and match history — tracked hole by hole.</p><div class="hero-actions"><button class="btn lime" data-action="new-game">+ Create Game</button>${active?'<button class="btn white" data-action="continue">Continue Round</button>':db.history.length?'<button class="btn white" data-action="repeat-last">Repeat Last Setup</button>':'<button class="btn white" data-action="history">Game History</button>'}</div></section>
+  ${active?`<div class="section-title"><h3>Active round</h3><span>Hole ${active.currentHole} / 18</span></div><section class="card active-card"><div class="row between"><div><b>${esc(active.course.name)}</b><div class="smalltxt muted">${active.players.map(p=>esc(p.name)).join(' · ')}</div></div><button class="btn small" data-action="continue">Open</button></div></section>`:''}
+  ${!isInstalledApp()?`<section class="card" style="margin-top:12px"><div class="row between"><div><b>📲 Install RoundKaki</b><div class="smalltxt muted">Full-screen app · offline scoring · home-screen icon</div></div><button class="btn small lime" data-action="install-app">${deferredInstallPrompt?'Install':isIOSDevice?'How to install':'Install'}</button></div></section>`:''}
+  <div class="section-title"><h3>Quick access</h3><span>PWA v1.2</span></div>
+  <div class="quick-grid">
+    <button class="quick" data-action="new-game"><div class="qicon">⛳</div><b>Create Game</b><span>Set up a round</span></button>
+    <button class="quick" data-action="players"><div class="qicon">👥</div><b>Players</b><span>HCP & Kaki strokes</span></button>
+    <button class="quick" data-action="history"><div class="qicon">🏆</div><b>History</b><span>Past rounds</span></button>
+    <button class="quick" data-action="new-game"><div class="qicon">🃏</div><b>Baccarat</b><span>UP · strokes · points</span></button>
+  </div>
+  <div style="margin-top:10px"><button class="btn outline wide" data-action="settings">⚙️ Data backup & rules</button></div>
+  <div class="section-title"><h3>How RoundKaki remembers</h3></div>
+  <section class="card"><div class="notice greenish"><b>Kaki Handicap</b><br>Every pair keeps its own stroke history. If the receiver loses the round by 2+ holes, RoundKaki can add +1 for their next meeting. If they win by 2+, it can reduce by 1.</div></section>
+  <div class="footer-note">Points/units tracking only. Optional private value reference does not process payments.<br><a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a></div></main>`;
+}
+
+function wizardView(){
+  if(!draft){draft=newDraft();initPairStrokes(draft)}
+  const pct=(wizardStep/5)*100;
+  return `<main class="shell">${header(true,'Create Game')}<div class="wizard-head"><button class="back" data-action="wizard-back">← Back</button><div class="smalltxt muted">Step ${wizardStep} of 5</div><div class="progressbar"><i style="width:${pct}%"></i></div>${wizardStepContent()}</div></main>`;
+}
+
+function wizardStepContent(){
+  if(wizardStep===1) return stepCourse();
+  if(wizardStep===2) return stepPlayers();
+  if(wizardStep===3) return stepStrokes();
+  if(wizardStep===4) return stepGames();
+  return stepReview();
+}
+
+function stepCourse(){
+  const saved=db.courseCache||[];
+  const tees=draft.course.availableTees||[];
+  const teeField=tees.length?`<select class="select" id="teeName">${[...new Set([draft.course.tee,...tees])].map(t=>`<option value="${esc(t)}" ${String(t)===String(draft.course.tee)?'selected':''}>${esc(String(t).replaceAll('_',' '))}</option>`).join('')}</select>`:`<input class="input" id="teeName" value="${esc(draft.course.tee)}">`;
+  const geo=courseSearchState;
+  let geoHTML='';
+  if(['locating','loading','loading-holes'].includes(geo.status)) geoHTML=`<div class="geo-card"><b>📍 ${esc(geo.message)}</b><div class="tiny muted" style="margin-top:4px">Keep RoundKaki open while the lookup completes.</div></div>`;
+  else if(geo.status==='error') geoHTML=`<div class="notice" style="margin-top:9px"><b>GPS lookup unavailable</b><br>${esc(geo.message)} You can still enter the course manually.</div>`;
+  else if(geo.status==='results') geoHTML=`<div class="geo-card"><b>Courses near you</b>${geo.results.map((c,i)=>`<button class="course-result" data-near-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${c.distanceKm.toFixed(1)} km away · OpenStreetMap</span></div><span>›</span></button>`).join('')}<div class="source-note">Nearby-course discovery uses OpenStreetMap data. Coverage varies by course.</div></div>`;
+  else if(geo.status==='selected') geoHTML=`<div class="notice greenish" style="margin-top:9px"><b>✓ Course loaded</b><br>${esc(geo.message)}</div>`;
+  return `<h2>Where are you playing?</h2><p>Use GPS to find the course, then RoundKaki will load mapped hole details where available.</p>
+  <button class="btn lime wide" data-action="find-course-near-me">📍 Find Course Near Me</button>${geoHTML}
+  ${saved.length?`<section class="card" style="margin-top:10px"><div class="row between"><b class="smalltxt">Saved courses</b><span class="tiny muted">cached on this device</span></div>${saved.slice(0,5).map((c,i)=>`<button class="course-result" data-saved-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${esc(c.tee||'Tee')} · ${c.holes?.filter(h=>h.osmTags).length||0} mapped holes</span></div><span>›</span></button>`).join('')}</section>`:''}
+  <section class="card" style="margin-top:14px"><label class="field"><span>Course name</span><input class="input" id="courseName" value="${esc(draft.course.name)}"></label><label class="field"><span>Tee</span>${teeField}</label>
+  ${draft.course.provider&&draft.course.provider!=='manual'?`<div class="tiny muted" style="margin-bottom:9px">Source: ${esc(draft.course.provider)}${draft.course.latitude!=null?` · GPS-linked`:''}</div>`:''}
+  <div class="row between"><b class="smalltxt">18-hole setup</b><button class="btn small outline" data-action="toggle-course-holes">Edit / Review Holes</button></div><div id="courseHoles" class="course-holes hidden" style="margin-top:10px">${draft.course.holes.map(h=>`<div class="hole-mini"><b>H${h.hole}</b><div class="labels"><span>Par</span><span>SI</span><span>m</span></div><div class="mini-fields"><input data-hole-par="${h.hole}" type="number" min="3" max="6" value="${h.par}" title="Par"><input data-hole-si="${h.hole}" type="number" min="1" max="18" value="${h.si}" title="SI"><input data-hole-dist="${h.hole}" type="number" min="0" max="800" value="${h.distance??''}" placeholder="—" title="Distance metres"></div></div>`).join('')}</div><div class="source-note">GPS finds the course; Par, Stroke Index, tee distance and hole coordinates are loaded only where public map data includes them. Always review the scorecard before play. © OpenStreetMap contributors.</div></section>
+  <button class="btn wide" data-action="wizard-next">Choose Players →</button>`;
+}
+
+function stepPlayers(){
+  return `<h2>Who is in the flight?</h2><p>Add 2–6 golfers. Their official handicap is only the starting point — Kaki strokes can override it later.</p>
+  <section class="card" style="margin-top:14px"><div id="draftPlayers">${draft.playerIds.map((id,i)=>{const p=player(id);return `<div class="player-line"><select class="select" data-draft-player="${i}">${db.players.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${esc(x.name)}</option>`).join('')}</select><input class="input" data-edit-hcp="${id}" type="number" step="0.1" value="${p?.handicap??18}" title="Handicap"><button class="xbtn" data-remove-draft="${i}">×</button></div>`}).join('')}</div><button class="btn outline wide" data-action="add-draft-player">+ Add Player</button><div class="divider"></div><button class="btn soft wide" data-action="quick-new-player">Create New Golfer</button></section>
+  <button class="btn wide" data-action="wizard-next">Set Kaki Strokes →</button>`;
+}
+
+function stepStrokes(){
+  const vals=[50,70,80,100];
+  return `<h2>Set stroke relationships</h2><p>RoundKaki calculates a starting point from handicap difference, then remembers the actual strokes your group uses.</p>
+  <section class="card" style="margin-top:14px"><div class="smalltxt strong" style="margin-bottom:7px">Allowance</div><div class="pills">${vals.map(v=>`<button class="pill ${draft.allowance===v?'active':''}" data-allowance="${v}">${v}%</button>`).join('')}<button class="pill ${!vals.includes(draft.allowance)?'active':''}" data-allowance="custom">Custom</button></div>${!vals.includes(draft.allowance)?`<input class="input" id="customAllowance" type="number" min="0" max="200" value="${draft.allowance}" style="margin-top:9px">`:''}<div class="divider"></div><label class="row between"><span class="smalltxt"><b>Use saved Kaki strokes</b><br><span class="muted">Load previous pair history when available</span></span><input id="useHistory" type="checkbox" ${draft.useKakiHistory?'checked':''}></label></section>
+  <section class="card"><div class="stroke-matrix"><table class="stroke-table"><thead><tr><th>Pair</th><th>Calc</th><th>Saved</th><th>Use now</th></tr></thead><tbody>${Object.values(draft.pairStrokes).map(s=>{const a=player(s.lowId),b=player(s.receiverId);return `<tr><td><b>${esc(a?.name)} → ${esc(b?.name)}</b><div class="tiny muted">${esc(b?.name)} receives</div></td><td>${s.calculated}</td><td>${s.saved==null?'—':s.saved}</td><td><input class="stroke-num" data-pair-stroke="${pairKey(s.aId,s.bId)}" type="number" min="0" max="36" value="${s.strokes}"></td></tr>`}).join('')}</tbody></table></div></section>
+  <label class="card row between"><span class="smalltxt"><b>Auto-update next-game strokes</b><br><span class="muted">Default: lose by 2+ holes = +1 next game; win by 2+ = −1. Capped ±3 from calculated.</span></span><input id="autoUpdate" type="checkbox" ${draft.autoUpdateKaki?'checked':''}></label>
+  <button class="btn wide" data-action="wizard-next">Choose Games →</button>`;
+}
+
+function gameOption(key,ico,title,desc){return `<button class="game-option ${draft.games[key]?'selected':''}" data-game="${key}"><div class="ico">${ico}</div><div class="meta"><b>${title}</b><span>${desc}</span></div><div class="check">${draft.games[key]?'✓':''}</div></button>`}
+function stepGames(){
+  const teamOn=draft.games.team;
+  return `<h2>What are you playing?</h2><p>Run several games at once. Enter each golfer’s score once; RoundKaki updates everything.</p>
+  <section class="card" style="margin-top:14px">${gameOption('baccarat','🃏','Baccarat','Pair-by-pair points, UP/SINGLE and strokes')}${gameOption('match','🏆','Individual Match','Every player pair tracked hole-by-hole')}${gameOption('skins','🔥','Skins','Unique low net takes the skin; ties can carry')}${gameOption('snake','🐍','Snake','Last player to 3-putt holds the snake')}${gameOption('team','🤝','Partners / Best Ball','Team A vs Team B using best net score')}</section>
+  ${draft.games.baccarat?`<section class="card"><b>Baccarat Golf settings</b><div class="row" style="margin-top:10px"><label class="field" style="flex:1"><span>Base points</span><input class="input" id="basePoints" type="number" min="1" value="${draft.baccarat.basePoints}"></label></div><label class="field"><span>Score multiplier basis</span><select class="select" id="multBasis"><option value="adjusted" ${draft.baccarat.multiplierBasis==='adjusted'?'selected':''}>After handicap strokes (recommended)</option><option value="gross" ${draft.baccarat.multiplierBasis==='gross'?'selected':''}>Gross score only</option></select></label><div class="notice greenish"><b>Baccarat Golf points ladder</b><br>Pair result is decided after strokes. Square = PUSH / 0. Single vs Single Par win = 1 pt; each UP adds ×2. Winner Birdie ×2 · Eagle ×4 · actual Hole-in-One ×8. Therefore UP vs UP: Par win 4 · Birdie 8 · Eagle 16 · HIO 32.</div><div class="tiny muted" style="margin-top:8px">RoundKaki tracks golf points only. It does not accept stakes, hold funds, arrange wagers, or process payouts.</div></section>`:''}
+  ${teamOn?`<section class="card"><b>Partner teams</b><div style="margin-top:9px">${draft.playerIds.map((id,i)=>{const p=player(id);const team=draft.teamAssignments[id]|| (i<Math.ceil(draft.playerIds.length/2)?'A':'B');draft.teamAssignments[id]=team;return `<div class="row between" style="margin-bottom:7px"><span class="smalltxt strong">${esc(p?.name)}</span><select class="select" data-team="${id}" style="width:120px"><option value="A" ${team==='A'?'selected':''}>Team A</option><option value="B" ${team==='B'?'selected':''}>Team B</option></select></div>`}).join('')}</div></section>`:''}
+  <button class="btn wide" data-action="wizard-next">Review Game →</button>`;
+}
+
+function stepReview(){
+  return `<h2>Ready to tee off?</h2><p>Review the round. You can still go back and change anything.</p>
+  <section class="card" style="margin-top:14px"><div class="eyebrow green">Course</div><h3 style="margin:4px 0">${esc(draft.course.name)}</h3><div class="smalltxt muted">${esc(draft.course.tee)} tee · 18 holes</div><div class="divider"></div><div class="eyebrow green">Players</div><div class="row wrap" style="margin-top:8px">${draft.playerIds.map(id=>{const p=player(id);return `<span class="pill active">${esc(p?.name)} · HCP ${p?.handicap}</span>`}).join('')}</div><div class="divider"></div><div class="eyebrow green">Games</div><div class="row wrap" style="margin-top:8px">${Object.entries(draft.games).filter(x=>x[1]).map(([k])=>`<span class="pill">${({baccarat:'🃏 Baccarat',match:'🏆 Match',skins:'🔥 Skins',snake:'🐍 Snake',team:'🤝 Partners'})[k]}</span>`).join('')}</div></section>
+  <section class="card"><b>Stroke memory</b><div class="smalltxt muted" style="margin-top:4px">${Object.values(draft.pairStrokes).map(s=>`${esc(player(s.receiverId)?.name)} gets ${s.strokes} from ${esc(player(s.lowId)?.name)}`).join(' · ')}</div></section>
+  <div class="notice greenish"><b>Before every hole</b><br>Each player declares SINGLE or UP. Lock declarations before teeing off. The exact declaration is time-stamped and saved with that hole.</div>
+  <button class="btn lime wide" style="margin-top:12px" data-action="start-round">START ROUND ⛳</button>`;
+}
+
+function roundView(){
+  const r=db.activeRound; if(!r){view='home';return homeView();}
+  const h=r.holes[r.currentHole-1], ch=r.course.holes[r.currentHole-1];
+  const pairs=(h.locked&&allScoresEntered(r,h))?holePairResults(r,h):[];
+  const ledger=baccaratLedger(r), skins=skinsState(r), snake=snakeState(r), team=teamState(r);
+  return `<main class="shell">${header(true,r.course.name)}
+  <div class="round-top"><div class="hole-header"><div><div class="eyebrow">${esc(r.course.tee)} tee · SI ${ch.si}${ch.distance?` · ${ch.distance} m`:''}</div><h2>Hole ${h.hole} · Par ${ch.par}</h2></div><div class="navhole"><button data-hole-nav="-1">‹</button><button data-hole-nav="1">›</button></div></div>${r.course.holes.some(x=>Number.isFinite(x.centerLat))?`<div class="gps-helper"><div><b>📍 GPS Hole Helper</b><br><span>${gpsHoleState?.message?esc(gpsHoleState.message):'Suggest nearest mapped hole and approximate pin distance.'}</span></div><button class="btn small outline" data-action="gps-hole">Locate</button></div>`:''}</div>
+  ${r.games.baccarat?`<div class="section-title"><h3>1 · Declare UP</h3><span>${h.locked?'Locked ✓':'Before tee-off'}</span></div><section class="card"><div class="declare-grid">${r.players.map(p=>`<div class="declare ${h.locked?'locked':''}"><div class="name">${esc(p.name)}</div><div class="seg"><button ${h.locked?'disabled':''} class="${!h.up[p.id]?'active single':''}" data-up="${p.id}" data-v="0">SINGLE</button><button ${h.locked?'disabled':''} class="${h.up[p.id]?'active up':''}" data-up="${p.id}" data-v="1">UP ×2</button></div></div>`).join('')}</div><button class="btn ${h.locked?'outline':'lime'} wide" style="margin-top:10px" data-action="${h.locked?'unlock-hole':'lock-hole'}">${h.locked?'Edit / Unlock Hole':'LOCK DECLARATIONS'}</button>${h.locked?'<div class="tiny muted" style="margin-top:7px;text-align:center">UP/SINGLE is saved with this hole.</div>':''}</section>`:`<section class="card"><div class="row between"><div><b>${h.locked?'Hole ready ✓':'Start this hole'}</b><div class="tiny muted">Lock the hole before entering scores.</div></div><button class="btn small ${h.locked?'outline':'lime'}" data-action="${h.locked?'unlock-hole':'lock-hole'}">${h.locked?'Unlock':'START'}</button></div></section>`}
+  <section class="card"><div class="row between"><b>Stroke check · SI ${ch.si}</b><span class="tiny muted">pair-by-pair</span></div><div class="smalltxt muted" style="margin-top:7px">${holeStrokeHTML(r,h.hole)}</div></section>
+  <div class="section-title"><h3>${r.games.baccarat?'2':'1'} · Enter scores</h3><span>Gross score${r.games.snake?' + putts':''}</span></div>
+  <section class="card"><div class="score-list">${r.players.map(p=>{const s=h.scores[p.id]||ch.par;return `<div class="score-row"><div><b>${esc(p.name)}</b>${h.up[p.id]?'<span class="upbadge">UP ×2</span>':''}<div class="subline">HCP ${p.handicap}${r.games.snake?`<div class="putts">Putts <input data-putts="${p.id}" type="number" min="0" max="9" value="${h.putts[p.id]??''}" ${!h.locked?'disabled':''}></div>`:''}</div></div><div class="score-step"><button data-score="${p.id}" data-d="-1" ${!h.locked?'disabled':''}>−</button><strong id="score_${p.id}">${s}</strong><button data-score="${p.id}" data-d="1" ${!h.locked?'disabled':''}>+</button></div></div>`}).join('')}</div>${h.locked&&!allScoresEntered(r,h)?'<div class="tiny muted" style="margin-top:8px">Scores default to par when you first tap + or −.</div>':''}</section>
+  ${h.locked&&allScoresEntered(r,h)?`<div class="section-title"><h3>Hole result</h3><span>${pairs.filter(x=>x.square).length} square pair${pairs.filter(x=>x.square).length===1?'':'s'}</span></div><section class="card"><div class="tabs"><button class="tab active">Baccarat</button>${r.games.match?'<button class="tab">Match</button>':''}</div><div class="pair-list">${pairs.map(x=>pairHTML(r,x)).join('')}</div></section>`:''}
+  ${r.games.baccarat?`<div class="section-title"><h3>Running Baccarat</h3><span>points / units</span></div><section class="card"><div class="ledger">${ledgerHTML(r,ledger)}</div></section>`:''}
+  ${r.games.match?`<section class="card"><div class="row between"><b>🏆 Pair Match</b><span class="tiny muted">holes won</span></div><div class="pair-list" style="margin-top:9px">${pairMatchHTML(r)}</div></section>`:''}
+  ${r.games.skins?`<section class="card"><div class="row between"><b>🔥 Skins</b><span class="tiny muted">carry ${skins.carry}</span></div><div class="smalltxt" style="margin-top:8px">${r.players.map(p=>`${esc(p.name)} <b>${skins.wins[p.id]}</b>`).join(' · ')}</div></section>`:''}
+  ${r.games.snake?`<section class="card"><div class="row between"><b>🐍 Snake</b><span class="smalltxt ${snake.snake?'red':'muted'}">${snake.snake?`${esc(roundPlayer(r,snake.snake)?.name)} · H${snake.holeNo}`:'No 3-putt yet'}</span></div></section>`:''}
+  ${r.games.team?`<section class="card"><div class="row between"><b>🤝 Partners</b><span class="smalltxt">Team A ${team.a} · ${team.b} Team B</span></div></section>`:''}
+  <div class="bottom-actions"><div class="inner"><button class="btn outline" data-action="round-summary">Round View</button><button class="btn" data-action="next-hole">${r.currentHole===18?'FINISH ROUND':'SAVE & NEXT HOLE →'}</button></div></div></main>`;
+}
+
+function pairHTML(r,x){
+  const a=roundPlayer(r,x.aId),b=roundPlayer(r,x.bId);
+  if(x.square)return `<div class="pair square"><div><div class="pairname">${esc(a.name)} ↔ ${esc(b.name)} · SQUARE</div><div class="detail">${x.aGross}${x.aStroke?` −${x.aStroke}`:''} = ${x.aAdj} · ${x.bGross}${x.bStroke?` −${x.bStroke}`:''} = ${x.bAdj}</div></div><div class="pts">0 pts</div></div>`;
+  const w=roundPlayer(r,x.winnerId),l=roundPlayer(r,x.loserId);
+  const tags=[x.winnerUp?'winner UP':'',x.loserUp?'loser UP':'',x.scoreMultiplier>1?`${baccaratLabel(x.scoreMultiplier)} ×${x.scoreMultiplier}`:''].filter(Boolean).join(' · ');
+  return `<div class="pair"><div><div class="pairname">${esc(l.name)} → ${esc(w.name)}</div><div class="detail">${esc(a.name)} ${x.aGross}${x.aStroke?`−${x.aStroke}`:''}=${x.aAdj} · ${esc(b.name)} ${x.bGross}${x.bStroke?`−${x.bStroke}`:''}=${x.bAdj}${tags?` · ${tags}`:''}</div></div><div class="pts">${x.points} pts</div></div>`;
+}
+function holeStrokeHTML(r,holeNo){
+  const lines=[];
+  for(let i=0;i<r.players.length;i++) for(let j=i+1;j<r.players.length;j++){
+    const a=r.players[i],b=r.players[j],x=pairStrokeInfo(r,a.id,b.id,holeNo);
+    if(x.a>0) lines.push(`<b>${esc(a.name)}</b> gets ${x.a} from ${esc(b.name)}`);
+    if(x.b>0) lines.push(`<b>${esc(b.name)}</b> gets ${x.b} from ${esc(a.name)}`);
+  }
+  return lines.length?lines.join(' · '):'No handicap strokes apply between any pair on this hole.';
+}
+
+function upHistoryHTML(r){
+  const rows=r.holes.filter(h=>h.locked&&allScoresEntered(r,h));
+  if(!rows.length)return '<div class="empty">No completed holes.</div>';
+  return rows.map(h=>{
+    const ups=r.players.filter(p=>h.up[p.id]).map(p=>esc(p.name));
+    const singles=r.players.filter(p=>!h.up[p.id]).map(p=>esc(p.name));
+    return `<div class="history-item"><div class="history-icon">H${h.hole}</div><div class="main"><b>UP: ${ups.length?ups.join(', '):'None'}</b><span>Single: ${singles.join(', ')}${h.lockedAt?` · locked ${fmtTime(h.lockedAt)}`:''}</span></div></div>`;
+  }).join('');
+}
+
+function ledgerHTML(r,ledger){
+  const vals=Object.values(ledger); const max=Math.max(...vals),min=Math.min(...vals);
+  return r.players.map(p=>{const v=ledger[p.id]||0;const ref=moneyRef(r,v);return `<div class="ledger-item ${v===max&&max>0?'lead':''} ${v===min&&min<0?'tail':''}"><div class="n">${esc(p.name)}</div><div class="v ${v>0?'positive':v<0?'negative':''}">${v>0?'+':''}${v}</div><div class="u">points${ref?` · ${esc(ref)}`:''}</div></div>`}).join('');
+}
+function pairMatchHTML(r){
+  let out='';for(let i=0;i<r.players.length;i++)for(let j=i+1;j<r.players.length;j++){
+    const a=r.players[i],b=r.players[j],s=pairMatchStatus(r,a.id,b.id); const label=s.margin===0?'AS':s.margin>0?`${a.name} ${s.margin} UP`:`${b.name} ${Math.abs(s.margin)} UP`;
+    out+=`<div class="pair"><div class="pairname">${esc(a.name)} vs ${esc(b.name)}</div><div class="pts">${esc(label)}</div></div>`;
+  }return out;
+}
+
+function roundSummaryOverlay(){
+  const r=db.activeRound, ledger=baccaratLedger(r), played=r.holes.filter(h=>h.locked&&allScoresEntered(r,h)).length;
+  return `<main class="shell">${header(true,'Round Overview')}<section class="result-hero"><div class="trophy">⛳</div><h2>${esc(r.course.name)}</h2><div class="muted">${played} / 18 holes completed</div></section>${r.games.baccarat?`<section class="card"><b>Baccarat ledger</b><div class="ledger" style="margin-top:10px">${ledgerHTML(r,ledger)}</div></section>`:''}<section class="card"><b>Hole status</b><div class="course-holes" style="margin-top:9px">${r.holes.map(h=>`<button class="hole-mini" data-jump-hole="${h.hole}" style="text-align:left;background:${h.locked?'#eef8f1':'#fff'}"><b>H${h.hole}</b><div class="tiny muted">${h.locked&&allScoresEntered(r,h)?'✓ scored':h.locked?'locked':'open'}</div></button>`).join('')}</div></section><button class="btn wide" data-action="back-to-round">Back to Hole ${r.currentHole}</button><button class="btn danger wide" style="margin-top:8px" data-action="finish-round">Finish Round Now</button></main>`;
+}
+
+function playersView(){
+  const savedPairs=Object.entries(db.pairStrokes);
+  return `<main class="shell">${header(true,'Players')}<section class="card"><div class="row between"><div><b>Golfer profiles</b><div class="tiny muted">Official HCP + recurring Kaki history</div></div><button class="btn small" data-action="quick-new-player">+ Add</button></div><div style="margin-top:10px">${db.players.map(p=>`<div class="history-item"><div class="history-icon">🏌️</div><div class="main"><b>${esc(p.name)}</b><span>Handicap ${p.handicap}</span></div><button class="btn small outline" data-edit-player="${p.id}">Edit</button></div>`).join('')}</div></section>
+  <div class="section-title"><h3>Remembered Kaki strokes</h3><span>${savedPairs.length} pair${savedPairs.length===1?'':'s'}</span></div><section class="card">${savedPairs.length?savedPairs.map(([k,s])=>{const [a,b]=k.split('|'),pa=player(a),pb=player(b),rec=player(s.receiverId);const giver=s.receiverId===a?pb:pa;return `<div class="history-item"><div class="history-icon">↔</div><div class="main"><b>${esc(giver?.name)} → ${esc(rec?.name)}: ${s.strokes} strokes</b><span>Updated ${s.updatedAt?fmtDate(s.updatedAt):'from game setup'}</span></div></div>`}).join(''):'<div class="empty">No saved pair history yet. Finish a round to start building it.</div>'}</section></main>`;
+}
+
+function historyView(){
+  return `<main class="shell">${header(true,'Game History')}<section class="card">${db.history.length?db.history.map(r=>`<button class="history-item" style="width:100%;border-left:0;border-right:0;border-top:0;background:transparent;text-align:left" data-history="${r.id}"><div class="history-icon">⛳</div><div class="main"><b>${esc(r.course.name)}</b><span>${fmtDate(r.completedAt||r.createdAt)} · ${r.players.map(p=>esc(p.name)).join(', ')}</span></div><span>›</span></button>`).join(''):'<div class="empty">No completed rounds yet.</div>'}</section></main>`;
+}
+
+function summaryView(){
+  const r=db.history.find(x=>x.id===historyOpenId) || db.history[0];
+  if(!r){view='history';return historyView();}
+  const led=r.finalLedger||baccaratLedger(r); const order=[...r.players].sort((a,b)=>(led[b.id]||0)-(led[a.id]||0));
+  return `<main class="shell">${header(true,'Round Results')}<section class="result-hero"><div class="trophy">🏆</div><h2>${esc(r.course.name)}</h2><div class="muted">${fmtDate(r.completedAt||r.createdAt)} · ${r.course.tee} tee</div></section>
+  ${r.games.baccarat?`<section class="card"><b>🃏 Baccarat final</b><div style="margin-top:8px">${order.map((p,i)=>{const v=led[p.id]||0;return `<div class="rank"><div class="place">${i+1}</div><div class="who">${esc(p.name)}</div><div class="bal ${v>0?'positive':v<0?'negative':''}">${v>0?'+':''}${v} pts${moneyRef(r,v)?`<div class="tiny muted">${esc(moneyRef(r,v))}</div>`:''}</div></div>`}).join('')}</div></section>`:''}
+  ${r.kakiAdjustments?.length?`<section class="card"><b>🧠 Next-game Kaki strokes</b><div class="tiny muted" style="margin-top:3px">${r.autoUpdateKaki?'Saved automatically':'Recommendations only'}</div>${r.kakiAdjustments.map(a=>{const low=roundPlayer(r,a.lowId),hi=roundPlayer(r,a.receiverId);return `<div class="adjust"><div><b>${esc(low?.name)} → ${esc(hi?.name)}</b><span>${esc(a.reason)}</span></div><div class="delta">${a.current} → ${a.next}</div></div>`}).join('')}</section>`:''}
+  ${r.games.baccarat?`<section class="card"><div class="row between"><b>🔥 UP declaration history</b><span class="tiny muted">audit by hole</span></div><div style="margin-top:8px">${upHistoryHTML(r)}</div></section>`:''}
+  <button class="btn wide" data-action="repeat-last">Repeat This Setup</button><button class="btn outline wide" style="margin-top:8px" data-action="new-game">Create Different Game</button><button class="btn outline wide" style="margin-top:8px" data-action="history">Back to History</button></main>`;
+}
+
+
+function settingsView(){
+  return `<main class="shell">${header(true,'Data & Rules')}
+  <section class="card"><b>RoundKaki game rules</b><div class="notice greenish" style="margin-top:10px"><b>Kaki Stroke memory</b><br>Pair-specific strokes are remembered. At round end, a receiver losing by 2+ holes gets +1 next game; winning by 2+ gets −1. You can override any suggested stroke before the next round.</div><div class="notice" style="margin-top:9px"><b>Baccarat Golf</b><br>Strokes apply before comparing each pair. Square is a push. UP/SINGLE is locked per golfer per hole. UP vs UP gives 4 points for a normal win, 8 for Birdie, 16 for Eagle and 32 for an actual Hole-in-One.</div></section>
+  <section class="card"><b>📍 Free course & GPS data</b><p class="smalltxt muted">RoundKaki uses your phone GPS only when you tap a location button. Nearby courses and mapped hole details are requested from OpenStreetMap and cached on this device. Coverage varies, so Par / SI should be checked against the club scorecard.</p><div class="tiny muted">Cached courses: ${db.courseCache?.length||0} · RoundKaki does not continuously track your location.</div></section>
+  <section class="card"><b>Local data backup</b><p class="smalltxt muted">This free MVP stores players, rounds and Kaki-stroke memory on this browser/device. Export a backup before changing phones or clearing browser data.</p><button class="btn wide" data-action="export-data">Export RoundKaki backup</button><button class="btn outline wide" style="margin-top:8px" data-action="import-data">Import backup</button><input id="importFile" type="file" accept="application/json" class="hidden"></section>
+  <section class="card"><b>Golf scoring only</b><p class="smalltxt muted">RoundKaki records golf scores and non-cash points/units. It does not accept stakes, hold funds, facilitate wagering, or process payouts.</p></section>
+  <button class="btn danger wide" data-action="reset-data">Reset local demo data</button></main>`;
+}
+function exportDataFile(){
+  const payload=JSON.stringify({...db,exportedAt:todayISO(),app:'RoundKaki',schema:5},null,2);
+  const blob=new Blob([payload],{type:'application/json'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`RoundKaki-backup-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);toast('Backup exported.');
+}
+function resetData(){ if(confirm('Reset all RoundKaki local data on this device?')){localStorage.removeItem(DB_KEY);db=defaultDB();view='home';render();} }
+function importBackup(file){
+  const reader=new FileReader(); reader.onload=()=>{try{const x=JSON.parse(reader.result);if(!x||!Array.isArray(x.players))throw new Error();x.version=5;x.courseCache=Array.isArray(x.courseCache)?x.courseCache:[];db=x;saveDB();view='home';render();toast('Backup imported.');}catch{toast('That backup file is not valid.');}};reader.readAsText(file);
+}
+
+function bind(){
+  const importFile=document.getElementById('importFile');if(importFile)importFile.onchange=()=>{if(importFile.files?.[0])importBackup(importFile.files[0]);};
+  document.querySelectorAll('[data-action]').forEach(el=>el.onclick=()=>action(el.dataset.action,el));
+  document.querySelectorAll('[data-hole-nav]').forEach(el=>el.onclick=()=>moveHole(Number(el.dataset.holeNav)));
+  document.querySelectorAll('[data-up]').forEach(el=>el.onclick=()=>setUp(el.dataset.up,el.dataset.v==='1'));
+  document.querySelectorAll('[data-score]').forEach(el=>el.onclick=()=>changeScore(el.dataset.score,Number(el.dataset.d)));
+  document.querySelectorAll('[data-putts]').forEach(el=>el.onchange=()=>{const r=db.activeRound,h=r.holes[r.currentHole-1];h.putts[el.dataset.putts]=el.value===''?null:Number(el.value);saveDB();render();});
+  document.querySelectorAll('[data-jump-hole]').forEach(el=>el.onclick=()=>{db.activeRound.currentHole=Number(el.dataset.jumpHole);saveDB();view='round';render();});
+  document.querySelectorAll('[data-history]').forEach(el=>el.onclick=()=>{historyOpenId=el.dataset.history;view='summary';render();});
+  document.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>{draft.games[el.dataset.game]=!draft.games[el.dataset.game];render();});
+  document.querySelectorAll('[data-allowance]').forEach(el=>el.onclick=()=>{const v=el.dataset.allowance;draft.allowance=v==='custom'?75:Number(v);initPairStrokes(draft);render();});
+  document.querySelectorAll('[data-pair-stroke]').forEach(el=>el.onchange=()=>{draft.pairStrokes[el.dataset.pairStroke].strokes=Number(el.value)||0;draft.pairStrokes[el.dataset.pairStroke].source='custom';});
+  document.querySelectorAll('[data-draft-player]').forEach(el=>el.onchange=()=>{const idx=Number(el.dataset.draftPlayer);draft.playerIds[idx]=el.value;draft.playerIds=[...new Set(draft.playerIds)];initPairStrokes(draft);render();});
+  document.querySelectorAll('[data-edit-hcp]').forEach(el=>el.onchange=()=>{const p=player(el.dataset.editHcp);if(p){p.handicap=Number(el.value)||0;saveDB();initPairStrokes(draft);render();}});
+  document.querySelectorAll('[data-remove-draft]').forEach(el=>el.onclick=()=>{if(draft.playerIds.length<=2)return toast('Keep at least 2 players.');draft.playerIds.splice(Number(el.dataset.removeDraft),1);initPairStrokes(draft);render();});
+  document.querySelectorAll('[data-team]').forEach(el=>el.onchange=()=>{draft.teamAssignments[el.dataset.team]=el.value;});
+  document.querySelectorAll('[data-edit-player]').forEach(el=>el.onclick=()=>editPlayer(el.dataset.editPlayer));
+  document.querySelectorAll('[data-hole-par]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holePar)-1].par=Number(el.value)});
+  document.querySelectorAll('[data-hole-si]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holeSi)-1].si=Number(el.value)});
+  document.querySelectorAll('[data-hole-dist]').forEach(el=>el.onchange=()=>{draft.course.holes[Number(el.dataset.holeDist)-1].distance=el.value===''?null:Number(el.value)});
+  document.querySelectorAll('[data-near-course]').forEach(el=>el.onclick=()=>{const row=courseSearchState.results[Number(el.dataset.nearCourse)];if(row)loadOSMCourse(row);});
+  document.querySelectorAll('[data-saved-course]').forEach(el=>el.onclick=()=>{const c=db.courseCache[Number(el.dataset.savedCourse)];if(c){draft.course=clone(c);courseSearchState={status:'selected',results:[],message:`Loaded saved details for ${c.name}.`};render();}});
+  const cn=document.getElementById('courseName');if(cn)cn.oninput=()=>draft.course.name=cn.value;
+  const tn=document.getElementById('teeName');if(tn){const f=()=>{applyTeeToCourse(draft.course,tn.value);draft.course.tee=tn.value;if(tn.tagName==='SELECT')render();};tn.oninput=f;tn.onchange=f;}
+  const ca=document.getElementById('customAllowance');if(ca)ca.onchange=()=>{draft.allowance=Number(ca.value)||0;initPairStrokes(draft);render();};
+  const uh=document.getElementById('useHistory');if(uh)uh.onchange=()=>{draft.useKakiHistory=uh.checked;initPairStrokes(draft);render();};
+  const au=document.getElementById('autoUpdate');if(au)au.onchange=()=>draft.autoUpdateKaki=au.checked;
+  const bp=document.getElementById('basePoints');if(bp)bp.onchange=()=>draft.baccarat.basePoints=Math.max(1,Number(bp.value)||1);
+  const mb=document.getElementById('multBasis');if(mb)mb.onchange=()=>draft.baccarat.multiplierBasis=mb.value;
+}
+
+function action(a,el){
+  if(a==='home'){view='home';render();}
+  else if(a==='new-game') startNewGame();
+  else if(a==='repeat-last') repeatLastSetup();
+  else if(a==='continue'){view='round';render();}
+  else if(a==='players'){view='players';render();}
+  else if(a==='history'){view='history';render();}
+  else if(a==='settings'){view='settings';render();}
+  else if(a==='export-data') exportDataFile();
+  else if(a==='import-data') document.getElementById('importFile')?.click();
+  else if(a==='reset-data') resetData();
+  else if(a==='wizard-back'){ if(wizardStep>1){wizardStep--;render();} else {view='home';render();} }
+  else if(a==='wizard-next') nextWizard();
+  else if(a==='add-draft-player'){ if(draft.playerIds.length>=6)return toast('MVP supports up to 6 golfers.'); const unused=db.players.find(p=>!draft.playerIds.includes(p.id)); if(unused)draft.playerIds.push(unused.id); else {const p={id:uid('p'),name:`Player ${db.players.length+1}`,handicap:18};db.players.push(p);saveDB();draft.playerIds.push(p.id);} initPairStrokes(draft);render(); }
+  else if(a==='quick-new-player') addPlayerPrompt();
+  else if(a==='toggle-course-holes'){document.getElementById('courseHoles')?.classList.toggle('hidden');}
+  else if(a==='find-course-near-me') findNearbyCourses();
+  else if(a==='install-app') installRoundKaki();
+  else if(a==='gps-hole') gpsSuggestHole();
+  else if(a==='start-round') validateAndStart();
+  else if(a==='lock-hole') lockCurrentHole();
+  else if(a==='unlock-hole'){const r=db.activeRound,h=r.holes[r.currentHole-1];h.locked=false;h.lockedAt=null;saveDB();render();}
+  else if(a==='next-hole') nextHole();
+  else if(a==='round-summary'){document.getElementById('app').innerHTML=roundSummaryOverlay();bind();}
+  else if(a==='back-to-round'){view='round';render();}
+  else if(a==='finish-round') finishRound();
+}
+
+function nextWizard(){
+  if(wizardStep===1){ if(!draft.course.name.trim())return toast('Enter a course name.'); const sis=draft.course.holes.map(h=>Number(h.si)).sort((a,b)=>a-b); if(!sis.every((v,i)=>v===i+1))return toast('Stroke Index must use 1–18 exactly once.'); if(draft.course.provider!=='manual')saveCourseCache(draft.course); }
+  if(wizardStep===2){ if(draft.playerIds.length<2)return toast('Add at least 2 golfers.'); initPairStrokes(draft); }
+  if(wizardStep===4 && !Object.values(draft.games).some(Boolean)) return toast('Select at least one game.');
+  wizardStep=Math.min(5,wizardStep+1); render();
+}
+function validateAndStart(){
+  if(!draft.playerIds.length)return;
+  if(draft.games.team){const vals=draft.playerIds.map(id=>draft.teamAssignments[id]);if(!vals.includes('A')||!vals.includes('B'))return toast('Partners needs players on both Team A and Team B.');}
+  makeRound();
+}
+function lockCurrentHole(){
+  const r=db.activeRound,h=r.holes[r.currentHole-1];h.locked=true;h.lockedAt=todayISO();
+  r.players.forEach(p=>{if(!h.scores[p.id])h.scores[p.id]=r.course.holes[r.currentHole-1].par;}); saveDB();render();
+}
+function setUp(pid,val){const r=db.activeRound,h=r.holes[r.currentHole-1];if(h.locked)return;h.up[pid]=val;saveDB();render();}
+function changeScore(pid,d){const r=db.activeRound,h=r.holes[r.currentHole-1];if(!h.locked)return;const par=r.course.holes[r.currentHole-1].par;const curr=Number(h.scores[pid])||par;h.scores[pid]=clamp(curr+d,1,15);saveDB();render();}
+function moveHole(d){const r=db.activeRound;r.currentHole=clamp(r.currentHole+d,1,18);saveDB();render();}
+function nextHole(){
+  const r=db.activeRound,h=r.holes[r.currentHole-1];
+  if(!h.locked)return toast('Lock UP/SINGLE declarations first.');
+  if(!allScoresEntered(r,h))return toast('Enter every player’s score.');
+  if(r.currentHole===18)finishRound();else{r.currentHole++;saveDB();render();}
+}
+
+function addPlayerPrompt(){
+  const name=prompt('Golfer name'); if(!name)return;
+  const h=Number(prompt('Official handicap','18')); const p={id:uid('p'),name:name.trim(),handicap:Number.isFinite(h)?h:18};db.players.push(p);saveDB();
+  if(view==='wizard'&&draft){draft.playerIds.push(p.id);initPairStrokes(draft);} render();
+}
+function editPlayer(id){const p=player(id);if(!p)return;const name=prompt('Golfer name',p.name);if(!name)return;const h=Number(prompt('Official handicap',String(p.handicap)));p.name=name.trim();if(Number.isFinite(h))p.handicap=h;saveDB();render();}
+
+window.roundkaki={reset(){localStorage.removeItem(DB_KEY);db=defaultDB();view='home';render();},exportData(){return clone(db);},engine:{strokesOnHole,pairResult,baccaratLedger,pairMatchStatus,parseDistanceMeters,expandHoleElement}};
+render();
+})();
+
+</script>
+<script>if("serviceWorker" in navigator && location.protocol.startsWith("http")){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{scope:"./"}).catch(()=>{}));}</script>
+</body>
+</html>
