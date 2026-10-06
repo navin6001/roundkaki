@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a3d2a" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<link rel="manifest" href="manifest.webmanifest?v=3.0" />
-<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=3.0" />
-<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=3.0" />
-<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=3.0" />
+<link rel="manifest" href="manifest.webmanifest?v=3.2" />
+<link rel="icon" type="image/png" sizes="192x192" href="roundkaki-icon-v24-192.png?v=3.2" />
+<link rel="icon" type="image/png" sizes="512x512" href="roundkaki-icon-v24-512.png?v=3.2" />
+<link rel="apple-touch-icon" sizes="180x180" href="roundkaki-apple-v24.png?v=3.2" />
 <title>RoundKaki – Golf Games & Scoring</title>
 <style>
 :root{
@@ -97,7 +97,7 @@ function verifiedCourseData(name){return VERIFIED_COURSE_PACK[normalizeCourseNam
 function applyVerifiedCoursePack(name,{quiet=false}={}){
   const pack=verifiedCourseData(name); if(!pack)return false;
   const previous=draft.course||defaultCourse();
-  const c={...defaultCourse(),...previous,name:pack.name,tee:pack.tee,provider:pack.provider,verified:true,verifiedAt:pack.verifiedAt,verifiedSourceNote:pack.sourceNote,availableTees:[pack.tee]};
+  const c={...defaultCourse(),...previous,name:pack.name,tee:pack.tee,provider:pack.provider,verified:true,verificationStatus:'verified',verifiedAt:pack.verifiedAt,verifiedSourceNote:pack.sourceNote,availableTees:[pack.tee]};
   c.holes=c.holes.map((h,i)=>{const [par,si,distance]=pack.holes[i]; return {...h,par,si,distance,scorecardSource:pack.provider};});
   draft.course=c; saveCourseCache(c);
   courseSearchState={...courseSearchState,status:'selected',message:`Verified RoundKaki scorecard loaded for ${pack.name}. Par / SI 1–18 ready.`};
@@ -137,7 +137,7 @@ let wizardStep = 1;
 let draft = null;
 let historyOpenId = null;
 let courseSearchState = {status:'idle',results:[],message:''};
-let malaysiaPackSyncState = {running:false,done:0,total:MALAYSIA_COURSES.length,success:0,failed:0,message:''};
+let malaysiaCourseCloudState = {loading:false,cached:null,message:''};
 let gpsHoleState = null;
 let deferredInstallPrompt = null;
 let playerEditor = null;
@@ -375,18 +375,35 @@ async function mergeOSMLayoutIntoCourse(course){
 async function loadOpenGolfIntoDraft(name,row=null,quiet=false){
   const c=await fetchOpenGolfCoursePackEntry(name,row);await mergeOSMLayoutIntoCourse(c);draft.course={...c,name:row?.name||c.name};saveCourseCache(draft.course);
   const sis=draft.course.holes.map(h=>Number(h.si));const valid=sis.length===18&&new Set(sis).size===18&&sis.every(x=>x>=1&&x<=18);
-  courseSearchState={...courseSearchState,status:'selected',message:`${draft.course.name}: scorecard loaded without an API key · ${valid?'SI 1–18 ready':'SI incomplete — review before play'}${draft.course.holes.some(h=>h.centerLat)?' · mapped hole layout added':''}.`};
+  courseSearchState={...courseSearchState,status:'selected',message:`${draft.course.name}: course scorecard loaded · ${valid?'SI 1–18 ready':'SI incomplete — review before play'}${draft.course.holes.some(h=>h.centerLat)?' · mapped hole layout added':''}.`};
   if(!quiet)toast(valid?'Course scorecard loaded.':'Course loaded; review missing SI.');render();return draft.course;
 }
 
-function apiKey(){return String(db.settings?.golfCourseApiKey||'').trim();}
-async function golfApi(path,params={}){
-  const key=apiKey(); if(!key)throw new Error('Add your free GolfCourseAPI key in Settings first.');
-  const u=new URL(`https://api.golfcourseapi.com${path}`); Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
-  const res=await fetch(u,{headers:{'Authorization':`Key ${key}`,'Accept':'application/json'}});
-  if(res.status===401)throw new Error('GolfCourseAPI key is invalid.');
-  if(!res.ok)throw new Error(`GolfCourseAPI lookup failed (${res.status}).`);
-  return res.json();
+async function courseDataProxy(action,payload={}){
+  if(!sb) throw new Error('RoundKaki cloud is unavailable.');
+  const headers={'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY};
+  try{const {data}=await sb.auth.getSession();if(data?.session?.access_token)headers.Authorization=`Bearer ${data.session.access_token}`;}catch{}
+  const res=await fetch(`${SUPABASE_URL}/functions/v1/course-data`,{method:'POST',headers,body:JSON.stringify({action,...payload})});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data?.error||`Course service failed (${res.status}).`);
+  return data;
+}
+async function loadGolfCourseApiIntoDraft(name,row=null,quiet=false){
+  const out=await courseDataProxy('lookup',{name,latitude:row?.latitude??draft?.course?.latitude??null,longitude:row?.longitude??draft?.course?.longitude??null});
+  const detail=out?.detail||{};const tees=apiTeeOptions(detail);if(!tees.length)throw new Error('No tee scorecard is available for this course yet.');
+  const c=draft.course||defaultCourse();c.golfApiCourseId=out?.provider_course_id||detail?.id||null;c.apiTees=tees;c.availableTees=tees.map(t=>t.key);c.webScorecardName=out?.source_name||golfApiCourseName(detail);c.provider=out?.provider||'RoundKaki Course Library';c.verificationStatus=out?.verification_status||'community';
+  const wanted=normalizeTeeColor(c.tee||'White');
+  const selected=tees.find(t=>normalizeTeeColor(t.tee_name)===wanted)||tees.find(t=>t.gender==='male'&&normalizeTeeColor(t.tee_name)==='White')||tees.find(t=>t.gender==='female'&&normalizeTeeColor(t.tee_name)==='Red')||tees[0];
+  c.tee=selected.key;applyTeeToCourse(c,c.tee);await mergeOSMLayoutIntoCourse(c);saveCourseCache(c);
+  const sis=c.holes.map(h=>Number(h.si));const valid=sis.length===18&&new Set(sis).size===18&&sis.every(x=>x>=1&&x<=18);
+  courseSearchState={...courseSearchState,status:'selected',message:`${c.name}: course scorecard loaded · ${valid?'SI 1–18 ready':'SI incomplete — review before play'}.`};
+  if(!quiet)toast(valid?'Course scorecard loaded.':'Course loaded; review missing SI.');render();return c;
+}
+async function refreshMalaysiaCloudStatus(){
+  if(malaysiaCourseCloudState.loading)return;malaysiaCourseCloudState={loading:true,cached:malaysiaCourseCloudState.cached,message:'Checking shared course cache…'};render();
+  try{const d=await courseDataProxy('status');malaysiaCourseCloudState={loading:false,cached:Number(d?.cached_courses)||0,message:''};}
+  catch(e){malaysiaCourseCloudState={loading:false,cached:null,message:e.message||'Course cloud not available yet.'};}
+  render();
 }
 function golfApiCourseName(c){
   const club=String(c?.club_name||'').trim(), course=String(c?.course_name||'').trim();
@@ -416,20 +433,27 @@ function chooseApiMatch(courses,row){
 async function refreshScorecardFromWeb(row=null,quiet=false){
   const name=row?.name||draft?.course?.name;if(!name)return;
   if(applyVerifiedCoursePack(name,{quiet:true})){if(!quiet)toast('Verified RoundKaki course data loaded.');return;}
-  courseSearchState={...courseSearchState,status:'loading-scorecard',message:`Loading Par / Stroke Index for ${name}…`};render();
-  try{return await loadOpenGolfIntoDraft(name,row,quiet);}catch(openErr){
-    if(apiKey()){
-      try{
-        const sr=await golfApi('/v1/search',{search_query:name});const match=chooseApiMatch(sr.courses||[],row||draft.course);if(!match?.id)throw new Error('No matching fallback scorecard found.');
-        const raw=await golfApi(`/v1/courses/${match.id}`);const detail=raw.course||raw;const tees=apiTeeOptions(detail);if(!tees.length)throw new Error('No tee scorecard available.');
-        const c=draft.course;c.golfApiCourseId=match.id;c.apiTees=tees;c.availableTees=tees.map(t=>t.key);c.webScorecardName=golfApiCourseName(detail);c.provider=c.osm?'GolfCourseAPI + OpenStreetMap':'GolfCourseAPI';
-        const selected=tees.find(t=>String(t.tee_name).toLowerCase()===String(c.tee).toLowerCase())||tees.find(t=>t.gender==='male')||tees[0];c.tee=selected.key;applyTeeToCourse(c,c.tee);saveCourseCache(c);
-        courseSearchState={...courseSearchState,status:'selected',message:`Fallback scorecard loaded: ${c.webScorecardName}.`};render();return;
-      }catch{}
+  courseSearchState={...courseSearchState,status:'loading-scorecard',message:`Loading ${name} scorecard…`};render();
+  try{return await loadGolfCourseApiIntoDraft(name,row,quiet);}catch(primaryErr){
+    try{return await loadOpenGolfIntoDraft(name,row,quiet);}catch(openErr){
+      courseSearchState={...courseSearchState,status:'selected',message:`${name}: this scorecard is not in the RoundKaki library yet. Review or enter the club scorecard before play.`};render();if(!quiet)toast('Scorecard needs verification.');
+      console.warn('Course lookup failed',primaryErr,openErr);
     }
-    courseSearchState={...courseSearchState,status:'selected',message:`${name}: automatic scorecard not available yet. ${openErr.message} Review the club scorecard before play.`};render();if(!quiet)toast('Scorecard needs verification.');
   }
 }
+async function submitCurrentCourseForReview(){
+  if(!authSession?.user?.id)return toast('Sign in to submit a course scorecard.');
+  if(!draft?.course?.name)return toast('Select a course first.');
+  const pars=draft.course.holes.map(h=>Number(h.par));
+  const sis=draft.course.holes.map(h=>Number(h.si)).sort((a,b)=>a-b);
+  const valid=pars.length===18&&pars.every(v=>Number.isFinite(v)&&v>=3&&v<=6)&&sis.length===18&&sis.every((v,i)=>v===i+1);
+  if(!valid)return toast('Complete Par and SI 1–18 before submitting.');
+  try{
+    await courseDataProxy('submit',{course_name:draft.course.name,tee_name:draft.course.tee||'',payload:{name:draft.course.name,tee:draft.course.tee||'',holes:draft.course.holes,apiTees:draft.course.apiTees||[],latitude:draft.course.latitude??null,longitude:draft.course.longitude??null}});
+    toast('Scorecard submitted for RoundKaki verification.');
+  }catch(e){toast(e.message||'Could not submit scorecard.');}
+}
+
 function currentPosition(){
   return new Promise((resolve,reject)=>{
     if(!navigator.geolocation)return reject(new Error('GPS is not available in this browser.'));
@@ -493,15 +517,10 @@ async function loadOSMCourse(row){
 }
 
 async function syncMalaysiaCoursePack(){
-  if(malaysiaPackSyncState.running)return;
-  malaysiaPackSyncState={running:true,done:0,total:MALAYSIA_COURSES.length,success:0,failed:0,message:'Downloading Malaysia scorecards for offline reuse…'};render();
-  let cursor=0;const worker=async()=>{while(true){const i=cursor++;if(i>=MALAYSIA_COURSES.length)break;const name=MALAYSIA_COURSES[i];try{
-      if(verifiedCourseData(name)){const pack=verifiedCourseData(name),c=defaultCourse();c.name=pack.name;c.tee=pack.tee;c.provider=pack.provider;c.verified=true;c.verifiedAt=pack.verifiedAt;c.verifiedSourceNote=pack.sourceNote;c.availableTees=[pack.tee];c.holes=c.holes.map((h,i)=>{const [par,si,distance]=pack.holes[i];return {...h,par,si,distance,scorecardSource:pack.provider};});saveCourseCache(c);malaysiaPackSyncState.success++;}
-      else{const c=await fetchOpenGolfCoursePackEntry(name,null);c.name=name;saveCourseCache(c);malaysiaPackSyncState.success++;}
-    }catch{malaysiaPackSyncState.failed++;}
-    malaysiaPackSyncState.done++;malaysiaPackSyncState.message=`Malaysia Course Pack: ${malaysiaPackSyncState.done}/${malaysiaPackSyncState.total} · ${malaysiaPackSyncState.success} loaded · ${malaysiaPackSyncState.failed} need verification`;if(malaysiaPackSyncState.done%3===0)render();
-  }};
-  try{await Promise.all([worker(),worker(),worker()]);}finally{malaysiaPackSyncState.running=false;malaysiaPackSyncState.message=`Course Pack complete: ${malaysiaPackSyncState.success}/${malaysiaPackSyncState.total} scorecards cached. ${malaysiaPackSyncState.failed} courses still need club/manual verification.`;render();toast('Malaysia Course Pack sync finished.');}
+  // v3.2: course scorecards are resolved through the shared RoundKaki Malaysia course library.
+  // This avoids exhausting GolfCourseAPI's free daily request allowance with a 148-course bulk sync.
+  await refreshMalaysiaCloudStatus();
+  toast('Course library status refreshed. Scorecards load automatically when a course is selected.');
 }
 
 async function gpsSuggestHole(){
@@ -880,7 +899,7 @@ function homeView(){
   ${active?`<div class="section-title"><h3>Active round</h3><span>Hole ${active.currentHole} / 18</span></div><section class="card active-card"><div class="row between"><div><b>${esc(active.course.name)}</b><div class="smalltxt muted">${active.players.map(p=>esc(p.name)).join(' · ')}</div></div><button class="btn small" data-action="continue">Open</button></div></section>`:''}
   ${!isInstalledApp()?`<section class="card" style="margin-top:12px"><div class="row between"><div><b>📲 Install RoundKaki</b><div class="smalltxt muted">Full-screen app · offline scoring · home-screen icon</div></div><button class="btn small lime" data-action="install-app">${deferredInstallPrompt?'Install':isIOSDevice?'How to install':'Install'}</button></div></section>`:''}
   ${authSession?`<section class="card account-card" style="margin-top:12px"><div class="row between"><div><b>👤 ${esc(authProfile?.full_name||authSession.user.email||'Signed in')}</b><div class="smalltxt muted">@${esc(authProfile?.roundkaki_id||'profile')} · ${cloudMode==='active'?'Cloud sync on':'Cloud setup'}</div></div><button class="btn small outline" data-action="account">Account</button></div></section>`:`<section class="card" style="margin-top:12px"><div class="row between"><div><b>☁️ Save your golf history</b><div class="smalltxt muted">Create a free RoundKaki account</div></div><button class="btn small" data-action="account">Sign in</button></div></section>`}
-  <div class="section-title"><h3>Quick access</h3><span>Release v3.0</span></div>
+  <div class="section-title"><h3>Quick access</h3><span>Release v3.2</span></div>
   <div class="quick-grid">
     <button class="quick" data-action="new-game"><div class="qicon">⛳</div><b>Create Game</b><span>Set up a round</span></button>
     <button class="quick" data-action="players"><div class="qicon">👥</div><b>Players</b><span>HCP & Kaki strokes</span></button>
@@ -923,7 +942,7 @@ function stepCourse(){
   <button class="btn lime wide" data-action="find-course-near-me">📍 Find Course Near Me</button>${geoHTML}
   ${saved.length?`<section class="card" style="margin-top:10px"><div class="row between"><b class="smalltxt">Recent courses</b><span class="tiny muted">saved on this device</span></div>${saved.slice(0,5).map((c,i)=>`<button class="course-result" data-saved-course="${i}"><div class="pin">⛳</div><div class="meta"><b>${esc(c.name)}</b><span>${c.holes?.length===18?'18-hole scorecard':'Saved course'}</span></div><span>›</span></button>`).join('')}</section>`:''}
   <section class="card" style="margin-top:14px"><label class="field"><span>Course name</span><input class="input" id="courseName" list="malaysiaCourseList" autocomplete="off" placeholder="Search Malaysia courses…" value="${esc(draft.course.name)}"><datalist id="malaysiaCourseList">${MALAYSIA_COURSES.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></label>
-  ${courseReady?`<div class="notice greenish" style="margin-top:4px"><div class="row between"><div><b>✓ Course data ready</b><br><span class="smalltxt">18 holes · Par ${parTotal} · Stroke Index verified</span></div><button class="btn small outline" data-action="toggle-course-holes">Review</button></div></div>`:`<div class="notice" style="margin-top:4px"><b>⚠️ Course data incomplete</b><br><span class="smalltxt">RoundKaki needs the Par and real Stroke Index for all 18 holes before play.</span><div class="row" style="gap:8px;margin-top:9px"><button class="btn small soft" data-action="refresh-web-scorecard">Try Course Lookup</button><button class="btn small outline" data-action="toggle-course-holes">Review / Enter Scorecard</button></div></div>`}
+  ${courseReady?`<div class="notice greenish" style="margin-top:4px"><div class="row between"><div><b>✓ Course data ready</b><br><span class="smalltxt">18 holes · Par ${parTotal} · SI 1–18 ready${draft.course.verificationStatus==='verified'?' · RoundKaki verified':''}</span></div><button class="btn small outline" data-action="toggle-course-holes">Review</button></div>${authSession?`<button class="btn small soft" style="margin-top:9px" data-action="submit-course-review">Share scorecard for RoundKaki verification</button>`:''}</div>`:`<div class="notice" style="margin-top:4px"><b>⚠️ Course data incomplete</b><br><span class="smalltxt">RoundKaki needs the Par and real Stroke Index for all 18 holes before play.</span><div class="row" style="gap:8px;margin-top:9px"><button class="btn small soft" data-action="refresh-web-scorecard">Load Course Scorecard</button><button class="btn small outline" data-action="toggle-course-holes">Review / Enter Scorecard</button></div></div>`}
   <div id="courseHoles" class="course-holes hidden" style="margin-top:10px">${draft.course.holes.map(h=>`<div class="hole-mini"><b>H${h.hole}</b><div class="labels"><span>Par</span><span>SI</span><span>m</span></div><div class="mini-fields"><input data-hole-par="${h.hole}" type="number" min="3" max="6" value="${h.par??''}" placeholder="—" title="Par"><input data-hole-si="${h.hole}" type="number" min="1" max="18" value="${h.si??''}" placeholder="—" title="Stroke Index"><input data-hole-dist="${h.hole}" type="number" min="0" max="800" value="${h.distance??''}" placeholder="—" title="Distance metres"></div></div>`).join('')}</div>
   </section>
   <button class="btn wide" style="margin-top:10px" data-action="wizard-next">Choose Players →</button>`;
@@ -1054,7 +1073,7 @@ function summaryView(){
 function settingsView(){
   return `<main class="shell">${header(true,'Data & Rules')}
   <section class="card"><b>RoundKaki game rules</b><div class="notice greenish" style="margin-top:10px"><b>Kaki Stroke memory</b><br>Pair-specific strokes are remembered. At round end, a receiver losing by 2+ holes gets +1 next game; winning by 2+ gets −1. You can override any suggested stroke before the next round.</div><div class="notice" style="margin-top:9px"><b>Baccarat Golf</b><br>Strokes apply before comparing each pair. Square is a push. UP/SINGLE is locked per golfer per hole. UP vs UP gives 4 points for a normal win, 8 for Birdie, 16 for Eagle and 32 for an actual Hole-in-One.</div></section>
-  <section class="card"><b>📍 Malaysia Course Pack & GPS</b><p class="smalltxt muted">RoundKaki uses the free, keyless OpenGolfAPI for Par / Stroke Index / tee scorecards and OpenStreetMap for mapped hole layout. No API key is required for normal use. Course data is cached on this device after it is loaded.</p><button class="btn wide" data-action="sync-malaysia-pack" ${malaysiaPackSyncState.running?'disabled':''}>${malaysiaPackSyncState.running?'Syncing Malaysia Course Pack…':'Download / Refresh Malaysia Course Pack'}</button>${malaysiaPackSyncState.message?`<div class="notice greenish" style="margin-top:9px"><b>${esc(malaysiaPackSyncState.message)}</b></div>`:''}<div class="tiny muted" style="margin-top:8px">Cached courses: ${db.courseCache?.length||0}/${MALAYSIA_COURSES.length}. A synced scorecard still needs golfer/club review if its SI is incomplete. GPS location is requested only when you tap a GPS feature.</div><details style="margin-top:10px"><summary class="smalltxt"><b>Optional backup data provider</b></summary><p class="tiny muted">If you already have a GolfCourseAPI key, RoundKaki can use it as a fallback when the open source does not contain a course.</p><label class="field"><span>GolfCourseAPI key (optional)</span><input class="input" id="golfApiKey" type="password" value="${esc(db.settings?.golfCourseApiKey||'')}" placeholder="Optional"></label><button class="btn small outline" data-action="save-api-key">Save optional key</button></details><div class="tiny muted" style="margin-top:10px">Data attribution: scorecard/course data may contain OpenGolfAPI data (ODbL); mapped layout may contain OpenStreetMap data (ODbL).</div></section>
+  <section class="card"><b>📍 Malaysia Course Library & GPS</b><p class="smalltxt muted">RoundKaki includes the Malaysian course directory and loads available Par, Stroke Index and tee information automatically when you select a course.</p><div class="notice greenish" style="margin-top:10px"><b>No course pack download is required.</b><div class="tiny" style="margin-top:5px">RoundKaki checks its shared course library first. Missing scorecards can be reviewed from the club scorecard and submitted for verification.</div></div><div class="tiny muted" style="margin-top:9px">GPS is requested only when you use Find Course Near Me or the in-round GPS helper. Public map/course sources may be used in the background to improve coverage.</div></section>
   <section class="card"><b>Local data backup</b><p class="smalltxt muted">Guest data is stored on this device. When signed in, RoundKaki can also sync players, rounds and Kaki-stroke memory to your private cloud account. Manual export remains available as an extra backup.</p><button class="btn wide" data-action="export-data">Export RoundKaki backup</button><button class="btn outline wide" style="margin-top:8px" data-action="import-data">Import backup</button><input id="importFile" type="file" accept="application/json" class="hidden"></section>
   <section class="card"><b>Golf scoring only</b><p class="smalltxt muted">RoundKaki records golf scores and non-cash points/units. It does not accept stakes, hold funds, facilitate wagering, or process payouts.</p></section>
   <button class="btn danger wide" data-action="reset-data">Reset local demo data</button></main>`;
@@ -1134,8 +1153,8 @@ function action(a,el){
   else if(a==='toggle-course-holes'){document.getElementById('courseHoles')?.classList.toggle('hidden');}
   else if(a==='find-course-near-me') findNearbyCourses();
   else if(a==='refresh-web-scorecard') refreshScorecardFromWeb(null,false);
+  else if(a==='submit-course-review') submitCurrentCourseForReview();
   else if(a==='sync-malaysia-pack') syncMalaysiaCoursePack();
-  else if(a==='save-api-key'){const k=document.getElementById('golfApiKey')?.value?.trim()||'';db.settings=db.settings||{};db.settings.golfCourseApiKey=k;saveDB();toast(k?'GolfCourseAPI key saved on this device.':'API key cleared.');}
   else if(a==='install-app') installRoundKaki();
   else if(a==='gps-hole') gpsSuggestHole();
   else if(a==='start-round') validateAndStart();
