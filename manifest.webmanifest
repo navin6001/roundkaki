@@ -2,7 +2,7 @@
   "id": "./",
   "name": "RoundKaki – Golf Games & Scoring",
   "short_name": "RoundKaki",
-  "description": "Social golf scoring with remembered Kaki strokes, multiple games, Baccarat Golf points, partners, match history and GPS-assisted course lookup.",
+  "description": "Social golf scoring with remembered Kaki strokes, multiple games, Baccarat Golf points, partners, match history, Malaysia course search and GPS-assisted course lookup.",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
